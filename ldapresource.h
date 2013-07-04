@@ -2,30 +2,36 @@
 #define LDAPRESOURCE_H
 
 #include <akonadi/resourcebase.h>
+#include <KLDAP/LdapServer>
+#include <KLDAP/LdapSearch>
 
-class LDAPResource : public Akonadi::ResourceBase,
-                           public Akonadi::AgentBase::Observer
+class LDAPResource: public Akonadi::ResourceBase,
+                    public Akonadi::AgentBase::Observer
 {
-  Q_OBJECT
+Q_OBJECT
 
-  public:
+public:
     LDAPResource( const QString &id );
     ~LDAPResource();
 
-  public Q_SLOTS:
+public Q_SLOTS:
     virtual void configure( WId windowId );
 
-  protected Q_SLOTS:
+protected Q_SLOTS:
     void retrieveCollections();
     void retrieveItems( const Akonadi::Collection &col );
     bool retrieveItem( const Akonadi::Item &item, const QSet<QByteArray> &parts );
 
-  protected:
+protected:
     virtual void aboutToQuit();
+    
+private Q_SLOTS:
+    void slotItemsRetrievalResult (KJob* job);
 
-    virtual void itemAdded( const Akonadi::Item &item, const Akonadi::Collection &collection );
-    virtual void itemChanged( const Akonadi::Item &item, const QSet<QByteArray> &parts );
-    virtual void itemRemoved( const Akonadi::Item &item );
+private:
+    bool connectToServer();
+    KLDAP::LdapServer mLdapServer;
+    KLDAP::LdapConnection mLdapConnection;
 };
 
 #endif
