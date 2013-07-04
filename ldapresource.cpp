@@ -5,6 +5,11 @@
 
 #include <QtDBus/QDBusConnection>
 
+#include <Akonadi/CachePolicy>
+#include <akonadi/kmime/messageparts.h>
+
+#include <KABC/Addressee>
+
 using namespace Akonadi;
 
 LDAPResource::LDAPResource( const QString &id )
@@ -26,6 +31,31 @@ void LDAPResource::retrieveCollections()
   // TODO: this method is called when Akonadi wants to have all the
   // collections your resource provides.
   // Be sure to set the remote ID and the content MIME types
+    QString mServerUrl("ldap://192.168.122.88");
+
+    Collection root;
+    root.setParentCollection( Collection::root() );
+    root.setRemoteId( mServerUrl );
+    root.setName( name() );
+    root.setRights( Collection::ReadOnly );
+
+    CachePolicy policy;
+    policy.setInheritFromParent( false );
+    policy.setSyncOnDemand( true );
+    policy.setLocalParts( QStringList() << MessagePart::Envelope );
+    policy.setCacheTimeout( 1 );
+    policy.setIntervalCheckTime( -1 );
+    root.setCachePolicy( policy );
+
+    QStringList mimeTypes;
+    mimeTypes << Collection::mimeType();
+    mimeTypes << KABC::Addressee::mimeType();
+    root.setContentMimeTypes( mimeTypes );
+
+
+    Collection::List list;
+    list << root;
+    collectionsRetrieved( list );
 }
 
 void LDAPResource::retrieveItems( const Akonadi::Collection &collection )

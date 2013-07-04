@@ -1,6 +1,6 @@
 [Desktop Entry]
-Name=
-Comment=
+Name=LDAP Resource
+Comment=A readonly LDAP Resource
 Type=AkonadiResource
 Exec=akonadi_ldap_resource
 Icon=text-directory
