@@ -84,7 +84,7 @@ void LDAPResource::retrieveCollections()
     CachePolicy policy;
     policy.setInheritFromParent(false);
     policy.setSyncOnDemand(true);
-    policy.setCacheTimeout(1);
+    policy.setCacheTimeout(-1);
     policy.setIntervalCheckTime(-1);
     root.setCachePolicy(policy);
 
