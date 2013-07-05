@@ -45,6 +45,7 @@ bool LDAPResource::connectToServer()
         kWarning() << "already connected";
         return true;
     }
+    //This doesn't really open a connection, so we have to test ourselves if the server is available
     if (mLdapConnection.connect()) {
         kWarning() << mLdapConnection.connectionError();
         kWarning() << "failed to connect to server";
@@ -107,18 +108,16 @@ void LDAPResource::retrieveItems( const Akonadi::Collection &collection )
         kWarning() << "Failed to connect";
         return;
     }
-    setItemStreamingEnabled(true);
     RetrieveItemsJob *job = new RetrieveItemsJob( collection, mLdapConnection, this );
     connect(job, SIGNAL(contactsRetrieved(Akonadi::Item::List)), SLOT(contactsRetrieved(Akonadi::Item::List)));
     connect(job, SIGNAL(result(KJob*)), SLOT(slotItemsRetrievalResult(KJob*)));
-    job->start();
 }
 
 void LDAPResource::contactsRetrieved(const Item::List &list)
 {
+    setItemStreamingEnabled(true);
     kDebug() << list.size();
-//     itemsRetrievedIncremental(list, Item::List());
-    itemsRetrieved(list);
+    itemsRetrievedIncremental(list, Item::List());
 }
 
 void LDAPResource::slotItemsRetrievalResult (KJob* job)
