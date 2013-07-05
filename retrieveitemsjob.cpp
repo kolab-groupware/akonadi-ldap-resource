@@ -100,10 +100,16 @@ void RetrieveItemsJob::search()
 
 void RetrieveItemsJob::gotSearchResult(KLDAP::LdapSearch *search)
 {
-  Q_UNUSED( search );
-  kWarning();
-  emit contactsRetrieved(mRetrievedItems);
-  emitResult();
+    Q_UNUSED( search );
+    kWarning();
+    if (mRetrievedItems.isEmpty()) {
+        if (mItemToFetch.isValid()) {
+            setError(KJob::UserDefinedError);
+        }
+    } else {
+        emit contactsRetrieved(mRetrievedItems);
+    }
+    emitResult();
 }
 
 void RetrieveItemsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::LdapObject &obj)
