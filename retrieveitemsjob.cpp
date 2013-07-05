@@ -78,17 +78,20 @@ void RetrieveItemsJob::localFetchDone(KJob *job)
         emitResult();
         return;
     }
+    search();
 }
 
 void RetrieveItemsJob::search()
 {
     kDebug();
     QString searchbase("dc=example,dc=org");
+    QStringList requestedAttributes;
+    requestedAttributes << "dn" << "uid" << "cn" << "givenName" << "sn" << "mail" << "alias" << "displayName";
     int ret(0);
     if (mItemToFetch.isValid()) {
-        ret = mLdapSearch.search( KLDAP::LdapDN(mItemToFetch.remoteId()), KLDAP::LdapUrl::Base, QString("objectClass=*"), QStringList() << "dn" << "objectClass" << "uid");
+        ret = mLdapSearch.search( KLDAP::LdapDN(mItemToFetch.remoteId()), KLDAP::LdapUrl::Base, QLatin1String("objectClass=*"), requestedAttributes);
     } else {
-        ret = mLdapSearch.search( KLDAP::LdapDN(searchbase), KLDAP::LdapUrl::Sub, QString("objectClass=inetorgperson"), QStringList() << "dn" << "objectClass" << "uid");
+        ret = mLdapSearch.search( KLDAP::LdapDN(searchbase), KLDAP::LdapUrl::Sub, QLatin1String("objectClass=inetorgperson"), requestedAttributes);
     }
     if (!ret) {
         kWarning() << mLdapSearch.errorString();
@@ -101,7 +104,7 @@ void RetrieveItemsJob::search()
 void RetrieveItemsJob::gotSearchResult(KLDAP::LdapSearch *search)
 {
     Q_UNUSED( search );
-    kWarning();
+    kWarning() << mRetrievedItems.size();
     if (mRetrievedItems.isEmpty()) {
         if (mItemToFetch.isValid()) {
             setError(KJob::UserDefinedError);
@@ -128,7 +131,15 @@ void RetrieveItemsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Lda
     }
     KABC::Addressee addressee;
     addressee.setUid(QUuid::createUuid().toString());
-    addressee.setName(obj.dn().toString());
+    addressee.setName(obj.value("cn"));
+    addressee.setGivenName(obj.value("givenName"));
+    addressee.setFamilyName(obj.value("sn"));
+    addressee.setFormattedName(obj.value("displayName"));
+    QStringList email(obj.value("mail"));
+    foreach(const QByteArray &e, obj.values("alias")) {
+        email << e;
+    }
+    addressee.setEmails(email);
     item.setPayload(addressee);
     item.setMimeType(KABC::Addressee::mimeType());
     item.setParentCollection(mParentCollection);
