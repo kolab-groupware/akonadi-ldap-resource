@@ -116,12 +116,14 @@ void LDAPResource::retrieveItems( const Akonadi::Collection &collection )
     RetrieveItemsJob *job = new RetrieveItemsJob( collection, mLdapConnection, this );
     connect(job, SIGNAL(contactsRetrieved(Akonadi::Item::List)), SLOT(contactsRetrieved(Akonadi::Item::List)));
     connect(job, SIGNAL(result(KJob*)), SLOT(slotItemsRetrievalResult(KJob*)));
+    job->start();
 }
 
 void LDAPResource::contactsRetrieved(const Item::List &list)
 {
     kDebug() << list.size();
-    itemsRetrievedIncremental(list, Item::List());
+//     itemsRetrievedIncremental(list, Item::List());
+    itemsRetrieved(list);
 }
 
 void LDAPResource::slotItemsRetrievalResult (KJob* job)

@@ -37,44 +37,20 @@ RetrieveItemsJob::RetrieveItemsJob(const Akonadi::Collection& col, KLDAP::LdapCo
 void RetrieveItemsJob::doStart()
 {
     kDebug();
-    Akonadi::ItemFetchJob *job = new Akonadi::ItemFetchJob(mParentCollection, this);
-    job->fetchScope().setFetchModificationTime(false);
-    connect(job, SIGNAL(itemsReceived(Akonadi::Item::List)), this, SLOT(localItemsReceived(Akonadi::Item::List)));
-    connect(job, SIGNAL(result(KJob*)), this, SLOT(localFetchDone(KJob*)));
+    search();
 }
-
-void RetrieveItemsJob::localItemsReceived(const Akonadi::Item::List &items)
-{
-    kDebug() << items.size();
-    foreach (const Akonadi::Item &item, items) {
-        mLocalItemRemoteIds.insert(item.remoteId());
-    }
-}
-
-void RetrieveItemsJob::localFetchDone(KJob *job)
-{
-    kDebug();
-    if (job->error()) {
-        kWarning() << "retrieval failed";
-        setError(KJob::UserDefinedError);
-        emitResult();
-        return;
-    }
-    if (!search()) {
-        kWarning() << mLdapSearch.errorString();
-        kWarning() << "retrieval failed";
-        setError(KJob::UserDefinedError);
-        emitResult();
-    }
-}
-
 
 bool RetrieveItemsJob::search()
 {
     kDebug();
     QString searchbase("dc=example,dc=org");
-    return mLdapSearch.search( KLDAP::LdapDN(searchbase), KLDAP::LdapUrl::Sub, QString("objectClass=inetorgperson"), QStringList() << "dn" << "objectClass" << "uid");
-
+    const int ret = mLdapSearch.search( KLDAP::LdapDN(searchbase), KLDAP::LdapUrl::Sub, QString("objectClass=inetorgperson"), QStringList() << "dn" << "objectClass" << "uid");
+    if (!ret) {
+        kWarning() << mLdapSearch.errorString();
+        kWarning() << "retrieval failed";
+        setError(KJob::UserDefinedError);
+        emitResult();
+    }
 }
 
 void RetrieveItemsJob::gotSearchResult(KLDAP::LdapSearch *search)
@@ -94,10 +70,6 @@ void RetrieveItemsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Lda
     kDebug() << "got person: " << obj.dn().toString();
     Akonadi::Item item;
     item.setRemoteId(obj.dn().toString());
-    if (mLocalItemRemoteIds.contains(item.remoteId())) {
-        //TODO detect updates
-        return;
-    }
     KABC::Addressee addressee;
     addressee.setName(obj.dn().toString());
     item.setPayload(addressee);

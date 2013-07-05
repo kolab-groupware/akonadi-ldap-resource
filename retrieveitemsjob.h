@@ -38,15 +38,12 @@ signals:
 private Q_SLOTS:
     void gotSearchResult(KLDAP::LdapSearch *search);
     void gotSearchData(KLDAP::LdapSearch *search, const KLDAP::LdapObject &obj);
-    void localFetchDone(KJob*);
-    void localItemsReceived(const Akonadi::Item::List &);
     
 private:
     bool search();
     KLDAP::LdapSearch mLdapSearch;
     Akonadi::Item::List mRetrievedItems;
     Akonadi::Collection mParentCollection;
-    QSet<QString> mLocalItemRemoteIds;
 };
 
 #endif // RETRIEVEITEMSJOB_H
