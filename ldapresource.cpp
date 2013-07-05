@@ -77,7 +77,6 @@ void LDAPResource::retrieveCollections()
     CachePolicy policy;
     policy.setInheritFromParent(false);
     policy.setSyncOnDemand(true);
-    policy.setLocalParts(QStringList() << MessagePart::Envelope);
     policy.setCacheTimeout(1);
     policy.setIntervalCheckTime(-1);
     root.setCachePolicy(policy);
