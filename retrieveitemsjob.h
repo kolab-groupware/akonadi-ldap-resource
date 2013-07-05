@@ -24,6 +24,7 @@
 #include <KLDAP/LdapSearch>
 #include <akonadi/collection.h>
 #include <akonadi/item.h>
+#include <akonadi/transactionsequence.h>
 
 class RetrieveItemsJob :  public Akonadi::Job
 {
@@ -40,15 +41,15 @@ private Q_SLOTS:
     void gotSearchData(KLDAP::LdapSearch *search, const KLDAP::LdapObject &obj);
     void localFetchDone(KJob*);
     void localItemsReceived(const Akonadi::Item::List &);
-    void localItemFetchDone(KJob*);
-    void localItemReceived(const Akonadi::Item::List &);
+    void transactionDone(KJob* job);
     
 private:
+    Akonadi::TransactionSequence *transaction();
     void search();
     KLDAP::LdapSearch mLdapSearch;
-    Akonadi::Item::List mRetrievedItems;
     Akonadi::Collection mParentCollection;
     QHash<QString, QString> mLocalItems;
+    Akonadi::TransactionSequence *mTransaction;
 };
 
 #endif // RETRIEVEITEMSJOB_H

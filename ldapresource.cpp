@@ -15,7 +15,7 @@
 #include <KABC/Addressee>
 #include <KLDAP/LdapServer>
 #include <klocalizedstring.h>
-
+#include <Akonadi/ChangeRecorder>
 using namespace Akonadi;
 
 
@@ -33,6 +33,10 @@ LDAPResource::LDAPResource( const QString &id )
     mLdapServer.setPassword("Welcome2KolabSystems");
     mLdapServer.setAuth(KLDAP::LdapServer::Simple);
     mLdapServer.setSecurity(KLDAP::LdapServer::None);
+    
+    changeRecorder()->itemFetchScope().fetchFullPayload(false);
+    changeRecorder()->itemFetchScope().setAncestorRetrieval( ItemFetchScope::None );
+    changeRecorder()->setChangeRecordingEnabled(false);
 }
 
 LDAPResource::~LDAPResource()
@@ -111,15 +115,15 @@ void LDAPResource::retrieveItems( const Akonadi::Collection &collection )
         return;
     }
     RetrieveItemsJob *job = new RetrieveItemsJob( collection, mLdapConnection, this );
-    connect(job, SIGNAL(contactsRetrieved(Akonadi::Item::List)), SLOT(contactsRetrieved(Akonadi::Item::List)));
+//     connect(job, SIGNAL(contactsRetrieved(Akonadi::Item::List)), SLOT(contactsRetrieved(Akonadi::Item::List)));
     connect(job, SIGNAL(result(KJob*)), SLOT(slotItemsRetrievalResult(KJob*)));
 }
 
 void LDAPResource::contactsRetrieved(const Item::List &list)
 {
-    setItemStreamingEnabled(true);
-    kDebug() << list.size();
-    itemsRetrievedIncremental(list, Item::List());
+//     setItemStreamingEnabled(true);
+//     kDebug() << list.size();
+//     itemsRetrievedIncremental(list, Item::List());
 }
 
 void LDAPResource::slotItemsRetrievalResult (KJob* job)

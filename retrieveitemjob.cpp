@@ -16,6 +16,7 @@
  */
 
 #include "retrieveitemjob.h"
+#include "ldapmapper.h"
 #include <KABC/Addressee>
 #include <Akonadi/ItemFetchJob>
 #include <Akonadi/ItemFetchScope>
@@ -44,9 +45,7 @@ void RetrieveItemJob::search()
 {
     kDebug();
     QString searchbase("dc=example,dc=org");
-    QStringList requestedAttributes;
-    requestedAttributes << "dn" << "uid" << "cn" << "givenName" << "sn" << "mail" << "alias" << "displayName";
-    const int ret = mLdapSearch.search( KLDAP::LdapDN(mItemToFetch.remoteId()), KLDAP::LdapUrl::Base, QLatin1String("objectClass=*"), requestedAttributes);
+    const int ret = mLdapSearch.search( KLDAP::LdapDN(mItemToFetch.remoteId()), KLDAP::LdapUrl::Base, QLatin1String("objectClass=*"), LDAPMapper::requestedAttributes());
     if (!ret) {
         kWarning() << mLdapSearch.errorString();
         kWarning() << "retrieval failed";
@@ -73,16 +72,7 @@ void RetrieveItemJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Ldap
     kDebug() << "Object:";
     kDebug() << obj.toString();
     kDebug() << "got person: " << obj.dn().toString();
-    KABC::Addressee addressee;
-    addressee.setName(obj.value("cn"));
-    addressee.setGivenName(obj.value("givenName"));
-    addressee.setFamilyName(obj.value("sn"));
-    addressee.setFormattedName(obj.value("displayName"));
-    QStringList email(obj.value("mail"));
-    foreach(const QByteArray &e, obj.values("alias")) {
-        email << e;
-    }
-    addressee.setEmails(email);
+    KABC::Addressee addressee(LDAPMapper::getAddressee(obj));
     mItemToFetch.setPayload(addressee);
 }
 

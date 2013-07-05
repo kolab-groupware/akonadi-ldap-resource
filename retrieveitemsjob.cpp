@@ -16,15 +16,19 @@
  */
 
 #include "retrieveitemsjob.h"
+#include "ldapmapper.h"
 #include <KABC/Addressee>
 #include <Akonadi/ItemFetchJob>
 #include <Akonadi/ItemFetchScope>
+#include <Akonadi/ItemCreateJob>
+#include <Akonadi/ItemModifyJob>
 #include <quuid.h>
 
 RetrieveItemsJob::RetrieveItemsJob(const Akonadi::Collection& col, KLDAP::LdapConnection& connection, QObject* parent)
 :   Job(parent),
     mLdapSearch(connection),
-    mParentCollection(col)
+    mParentCollection(col),
+    mTransaction(0)
 {
     Q_ASSERT(connection.handle());
     connect( &mLdapSearch, SIGNAL(result(KLDAP::LdapSearch*)),
@@ -69,9 +73,7 @@ void RetrieveItemsJob::search()
 {
     kDebug();
     QString searchbase("dc=example,dc=org");
-    QStringList requestedAttributes;
-    requestedAttributes << "dn" << "uid" << "cn" << "givenName" << "sn" << "mail" << "alias" << "displayName" << "nsuniqueid" << "modifyTimestamp";
-    const int ret = mLdapSearch.search( KLDAP::LdapDN(searchbase), KLDAP::LdapUrl::Sub, QLatin1String("objectClass=inetorgperson"), requestedAttributes);
+    const int ret = mLdapSearch.search( KLDAP::LdapDN(searchbase), KLDAP::LdapUrl::Sub, QLatin1String("objectClass=inetorgperson"), LDAPMapper::requestedAttributes());
     if (!ret) {
         kWarning() << mLdapSearch.errorString();
         kWarning() << "retrieval failed";
@@ -83,11 +85,11 @@ void RetrieveItemsJob::search()
 void RetrieveItemsJob::gotSearchResult(KLDAP::LdapSearch *search)
 {
     Q_UNUSED( search );
-    kWarning() << mRetrievedItems.size();
-    if (!mRetrievedItems.isEmpty()) {
-        emit contactsRetrieved(mRetrievedItems);
+    if (!mTransaction) { // no jobs created here -> done
+        emitResult();
+    } else {
+        mTransaction->commit();
     }
-    emitResult();
 }
 
 void RetrieveItemsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::LdapObject &obj)
@@ -99,56 +101,41 @@ void RetrieveItemsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Lda
     kDebug() << "got person: " << obj.dn().toString() << obj.value("nsuniqueid") << obj.value("modifyTimestamp");
     Akonadi::Item item;
     item.setRemoteId(obj.dn().toString());
+    
+    item.setPayload(LDAPMapper::getAddressee(obj));
+    item.setMimeType(KABC::Addressee::mimeType());
+    item.setParentCollection(mParentCollection);
+    item.setRemoteRevision(obj.value("modifyTimestamp"));
+    
     if (mLocalItems.contains(item.remoteId())) {
         if (mLocalItems.value(item.remoteId()) == obj.value("modifyTimestamp")) {
             kDebug() << "skipping " << item.remoteId();
             return;
         } else {
             kDebug() << "modification";
-            //get uid and reuse
+            new Akonadi::ItemModifyJob(item, transaction());
+            return;
         }
     }
-    
     //new item
-    KABC::Addressee addressee;
-    addressee.setName(obj.value("cn"));
-    addressee.setGivenName(obj.value("givenName"));
-    addressee.setFamilyName(obj.value("sn"));
-    addressee.setFormattedName(obj.value("displayName"));
-    QStringList email(obj.value("mail"));
-    foreach(const QByteArray &e, obj.values("alias")) {
-        email << e;
-    }
-    addressee.setEmails(email);
-    item.setPayload(addressee);
-    item.setMimeType(KABC::Addressee::mimeType());
-    item.setParentCollection(mParentCollection);
-    item.setRemoteRevision(obj.value("modifyTimestamp"));
-    mRetrievedItems.append(item);
-//     Akonadi::ItemFetchJob *fetchJob = new Akonadi::ItemFetchJob(item, this);
-//     fetchJob->fetchScope().setFetchModificationTime(false);
-//     fetchJob->fetchScope().setCacheOnly(true);
-//     fetchJob->fetchScope().fetchFullPayload(false);
-// //     connect(fetchJob, SIGNAL(itemsReceived(Akonadi::Item::List)), this, SLOT(localItemReceived(Akonadi::Item::List)));
-//     connect(fetchJob, SIGNAL(result(KJob*)), this, SLOT(localItemFetchDone(KJob*)));
+    new Akonadi::ItemCreateJob(item, mParentCollection, transaction());
 }
 
-void RetrieveItemsJob::localItemReceived(const Akonadi::Item::List &list)
+Akonadi::TransactionSequence* RetrieveItemsJob::transaction()
 {
-
-}
-
-void RetrieveItemsJob::localItemFetchDone(KJob *job)
-{
-    kDebug();
-    if (job->error()) {
-        //new item
-    kDebug() << "new item";
+    if ( !mTransaction ) {
+        mTransaction= new Akonadi::TransactionSequence( this );
+        mTransaction->setAutomaticCommittingEnabled( false );
+        connect(mTransaction, SIGNAL(result(KJob*)), SLOT(transactionDone(KJob*)) );
     }
-//     Akonadi::ItemFetchJob *fetchJob = static_cast<Akonadi::ItemFetchJob>(job);
-//     const Akonadi::Item &item = fetchJob->items().first();
-    //modify or same as before
-    kDebug() << "modify";
+    return mTransaction;
 }
 
+void RetrieveItemsJob::transactionDone (KJob* job)
+{
+    if ( job->error() ) {
+        return; // handled by base class
+    }
+    emitResult();
+}        
 
