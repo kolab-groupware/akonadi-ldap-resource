@@ -72,8 +72,8 @@ void RetrieveItemJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Ldap
     kDebug() << "Object:";
     kDebug() << obj.toString();
     kDebug() << "got person: " << obj.dn().toString();
-    KABC::Addressee addressee(LDAPMapper::getAddressee(obj));
-    mItemToFetch.setPayload(addressee);
+    mItemToFetch.setPayload(LDAPMapper::getAddressee(obj));
+    mItemToFetch.setRemoteRevision(LDAPMapper::getTimestamp(obj));
 }
 
 Akonadi::Item RetrieveItemJob::getItem() const

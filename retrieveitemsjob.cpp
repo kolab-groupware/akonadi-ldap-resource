@@ -100,12 +100,11 @@ void RetrieveItemsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Lda
     kDebug() << obj.toString();
     kDebug() << "got person: " << obj.dn().toString() << obj.value("nsuniqueid") << obj.value("modifyTimestamp");
     Akonadi::Item item;
-    item.setRemoteId(obj.dn().toString());
-    
+    item.setRemoteId(LDAPMapper::getStableIdentifier(obj));
     item.setPayload(LDAPMapper::getAddressee(obj));
     item.setMimeType(KABC::Addressee::mimeType());
     item.setParentCollection(mParentCollection);
-    item.setRemoteRevision(obj.value("modifyTimestamp"));
+    item.setRemoteRevision(LDAPMapper::getTimestamp(obj));
     
     if (mLocalItems.contains(item.remoteId())) {
         if (mLocalItems.value(item.remoteId()) == obj.value("modifyTimestamp")) {

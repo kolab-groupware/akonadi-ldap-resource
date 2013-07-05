@@ -26,6 +26,8 @@ class LDAPMapper
 public:
     static QStringList requestedAttributes();
     static KABC::Addressee getAddressee(const KLDAP::LdapObject &obj);
+    static QString getStableIdentifier(const KLDAP::LdapObject &obj);
+    static QString getTimestamp(const KLDAP::LdapObject &obj);
 };
 
 #endif

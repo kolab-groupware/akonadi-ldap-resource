@@ -39,3 +39,14 @@ KABC::Addressee LDAPMapper::getAddressee(const KLDAP::LdapObject& obj)
     addressee.setEmails(email);
     return addressee;
 }
+
+QString LDAPMapper::getStableIdentifier(const KLDAP::LdapObject& obj)
+{
+    return obj.value("nsuniqueid");
+}
+
+QString LDAPMapper::getTimestamp(const KLDAP::LdapObject& obj)
+{
+    return obj.value("nsuniqueid");
+}
+
