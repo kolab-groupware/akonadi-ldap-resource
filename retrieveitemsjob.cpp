@@ -113,7 +113,7 @@ void RetrieveItemsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Lda
     kDebug() << "Object:";
     kDebug() << obj.toString();
     kDebug() << "got person: " << obj.dn().toString();
-    Akonadi::Item item;
+    Akonadi::Item item(mItemToFetch);
     item.setRemoteId(obj.dn().toString());
     if (mLocalItemRemoteIds.contains(item.remoteId())) {
         //TODO detect updates
