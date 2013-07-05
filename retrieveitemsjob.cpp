@@ -33,39 +33,23 @@ RetrieveItemsJob::RetrieveItemsJob(const Akonadi::Collection& col, KLDAP::LdapCo
            this, SLOT(gotSearchData(KLDAP::LdapSearch*,KLDAP::LdapObject)) );
 }
 
-RetrieveItemsJob::RetrieveItemsJob(const Akonadi::Item& item, KLDAP::LdapConnection& connection, QObject* parent)
-:   Job(parent),
-    mLdapSearch(connection),
-    mItemToFetch(item)
-{
-    Q_ASSERT(connection.handle());
-    connect( &mLdapSearch, SIGNAL(result(KLDAP::LdapSearch*)),
-           this, SLOT(gotSearchResult(KLDAP::LdapSearch*)) );
-    connect( &mLdapSearch, SIGNAL(data(KLDAP::LdapSearch*,KLDAP::LdapObject)),
-           this, SLOT(gotSearchData(KLDAP::LdapSearch*,KLDAP::LdapObject)) );
-}
-
-
 void RetrieveItemsJob::doStart()
 {
     kDebug();
-    if (mItemToFetch.isValid()) {
-        search();
-    } else {
-        Akonadi::ItemFetchJob *job = new Akonadi::ItemFetchJob(mParentCollection, this);
-        job->fetchScope().setFetchModificationTime(false);
-        job->fetchScope().setCacheOnly(true);
-        job->fetchScope().fetchFullPayload(false);
-        connect(job, SIGNAL(itemsReceived(Akonadi::Item::List)), this, SLOT(localItemsReceived(Akonadi::Item::List)));
-        connect(job, SIGNAL(result(KJob*)), this, SLOT(localFetchDone(KJob*)));
-    }
+    Akonadi::ItemFetchJob *job = new Akonadi::ItemFetchJob(mParentCollection, this);
+    job->fetchScope().setFetchModificationTime(false);
+    job->fetchScope().setCacheOnly(true);
+    job->fetchScope().fetchFullPayload(false);
+    connect(job, SIGNAL(itemsReceived(Akonadi::Item::List)), this, SLOT(localItemsReceived(Akonadi::Item::List)));
+    connect(job, SIGNAL(result(KJob*)), this, SLOT(localFetchDone(KJob*)));
 }
 
 void RetrieveItemsJob::localItemsReceived(const Akonadi::Item::List &items)
 {
     kDebug() << items.size();
     foreach (const Akonadi::Item &item, items) {
-        mLocalItemRemoteIds.insert(item.remoteId());
+        kDebug() << item.remoteId() << item.remoteRevision();
+        mLocalItems.insert(item.remoteId(), item.remoteRevision());
     }
 }
 
@@ -86,13 +70,8 @@ void RetrieveItemsJob::search()
     kDebug();
     QString searchbase("dc=example,dc=org");
     QStringList requestedAttributes;
-    requestedAttributes << "dn" << "uid" << "cn" << "givenName" << "sn" << "mail" << "alias" << "displayName";
-    int ret(0);
-    if (mItemToFetch.isValid()) {
-        ret = mLdapSearch.search( KLDAP::LdapDN(mItemToFetch.remoteId()), KLDAP::LdapUrl::Base, QLatin1String("objectClass=*"), requestedAttributes);
-    } else {
-        ret = mLdapSearch.search( KLDAP::LdapDN(searchbase), KLDAP::LdapUrl::Sub, QLatin1String("objectClass=inetorgperson"), requestedAttributes);
-    }
+    requestedAttributes << "dn" << "uid" << "cn" << "givenName" << "sn" << "mail" << "alias" << "displayName" << "nsuniqueid" << "modifyTimestamp";
+    const int ret = mLdapSearch.search( KLDAP::LdapDN(searchbase), KLDAP::LdapUrl::Sub, QLatin1String("objectClass=inetorgperson"), requestedAttributes);
     if (!ret) {
         kWarning() << mLdapSearch.errorString();
         kWarning() << "retrieval failed";
@@ -105,11 +84,7 @@ void RetrieveItemsJob::gotSearchResult(KLDAP::LdapSearch *search)
 {
     Q_UNUSED( search );
     kWarning() << mRetrievedItems.size();
-    if (mRetrievedItems.isEmpty()) {
-        if (mItemToFetch.isValid()) {
-            setError(KJob::UserDefinedError);
-        }
-    } else {
+    if (!mRetrievedItems.isEmpty()) {
         emit contactsRetrieved(mRetrievedItems);
     }
     emitResult();
@@ -121,16 +96,21 @@ void RetrieveItemsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Lda
     kWarning();
     kDebug() << "Object:";
     kDebug() << obj.toString();
-    kDebug() << "got person: " << obj.dn().toString();
-    Akonadi::Item item(mItemToFetch);
+    kDebug() << "got person: " << obj.dn().toString() << obj.value("nsuniqueid") << obj.value("modifyTimestamp");
+    Akonadi::Item item;
     item.setRemoteId(obj.dn().toString());
-    if (mLocalItemRemoteIds.contains(item.remoteId())) {
-        //TODO detect updates
-        kDebug() << "skipping " << item.remoteId();
-        return;
+    if (mLocalItems.contains(item.remoteId())) {
+        if (mLocalItems.value(item.remoteId()) == obj.value("modifyTimestamp")) {
+            kDebug() << "skipping " << item.remoteId();
+            return;
+        } else {
+            kDebug() << "modification";
+            //get uid and reuse
+        }
     }
+    
+    //new item
     KABC::Addressee addressee;
-    addressee.setUid(QUuid::createUuid().toString());
     addressee.setName(obj.value("cn"));
     addressee.setGivenName(obj.value("givenName"));
     addressee.setFamilyName(obj.value("sn"));
@@ -143,6 +123,32 @@ void RetrieveItemsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Lda
     item.setPayload(addressee);
     item.setMimeType(KABC::Addressee::mimeType());
     item.setParentCollection(mParentCollection);
+    item.setRemoteRevision(obj.value("modifyTimestamp"));
     mRetrievedItems.append(item);
+//     Akonadi::ItemFetchJob *fetchJob = new Akonadi::ItemFetchJob(item, this);
+//     fetchJob->fetchScope().setFetchModificationTime(false);
+//     fetchJob->fetchScope().setCacheOnly(true);
+//     fetchJob->fetchScope().fetchFullPayload(false);
+// //     connect(fetchJob, SIGNAL(itemsReceived(Akonadi::Item::List)), this, SLOT(localItemReceived(Akonadi::Item::List)));
+//     connect(fetchJob, SIGNAL(result(KJob*)), this, SLOT(localItemFetchDone(KJob*)));
 }
+
+void RetrieveItemsJob::localItemReceived(const Akonadi::Item::List &list)
+{
+
+}
+
+void RetrieveItemsJob::localItemFetchDone(KJob *job)
+{
+    kDebug();
+    if (job->error()) {
+        //new item
+    kDebug() << "new item";
+    }
+//     Akonadi::ItemFetchJob *fetchJob = static_cast<Akonadi::ItemFetchJob>(job);
+//     const Akonadi::Item &item = fetchJob->items().first();
+    //modify or same as before
+    kDebug() << "modify";
+}
+
 

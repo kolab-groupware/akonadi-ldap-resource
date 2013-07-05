@@ -1,5 +1,6 @@
 #include "ldapresource.h"
 #include "retrieveitemsjob.h"
+#include "retrieveitemjob.h"
 
 #include "settings.h"
 #include "settingsadaptor.h"
@@ -7,6 +8,8 @@
 #include <QtDBus/QDBusConnection>
 
 #include <Akonadi/CachePolicy>
+#include <Akonadi/ItemFetchJob>
+#include <Akonadi/ItemFetchScope>
 #include <akonadi/kmime/messageparts.h>
 
 #include <KABC/Addressee>
@@ -24,10 +27,10 @@ LDAPResource::LDAPResource( const QString &id )
                                 Settings::self(), QDBusConnection::ExportAdaptors );
 
     setNeedsNetwork(true);
-    mLdapServer.setHost("192.168.122.151");
+    mLdapServer.setHost("192.168.122.231");
     mLdapServer.setBaseDn(KLDAP::LdapDN("dc=example,dc=org"));
     mLdapServer.setBindDn("uid=doe,ou=People,dc=example,dc=org");
-    mLdapServer.setPassword("kolab");
+    mLdapServer.setPassword("Welcome2KolabSystems");
     mLdapServer.setAuth(KLDAP::LdapServer::Simple);
     mLdapServer.setSecurity(KLDAP::LdapServer::None);
 }
@@ -38,13 +41,12 @@ LDAPResource::~LDAPResource()
 
 bool LDAPResource::connectToServer()
 {
-    kDebug() << mLdapServer.host();
     mLdapConnection.setServer(mLdapServer);
-    kDebug() << mLdapConnection.server().host();
     if (mLdapConnection.handle()) {
         kWarning() << "already connected";
         return true;
     }
+    
     //This doesn't really open a connection, so we have to test ourselves if the server is available
     if (mLdapConnection.connect()) {
         kWarning() << mLdapConnection.connectionError();
@@ -124,7 +126,7 @@ void LDAPResource::slotItemsRetrievalResult (KJob* job)
 {
     kDebug() << "item retrieval done";
     if ( job->error() ) {
-        cancelTask( job->errorString() );
+        cancelTask(job->errorString());
     } else {
         itemsRetrievalDone();
     }
@@ -143,18 +145,9 @@ bool LDAPResource::retrieveItem( const Akonadi::Item &item, const QSet<QByteArra
     // TODO: this method is called when Akonadi wants more data for a given item.
     // You can only provide the parts that have been requested but you are allowed
     // to provide all in one go
-    RetrieveItemsJob *job = new RetrieveItemsJob( item, mLdapConnection, this );
-    connect(job, SIGNAL(contactsRetrieved(Akonadi::Item::List)), SLOT(contactRetrieved(Akonadi::Item::List)));
+    RetrieveItemJob *job = new RetrieveItemJob(item, mLdapConnection, this);
     connect(job, SIGNAL(result(KJob*)), SLOT(slotItemRetrievalResult(KJob*)));
-    job->start();
-
     return true;
-}
-
-void LDAPResource::contactRetrieved(const Item::List &list)
-{
-    Q_ASSERT(list.size() == 1);
-    itemRetrieved(list.at(0));
 }
 
 void LDAPResource::slotItemRetrievalResult (KJob* job)
@@ -162,7 +155,9 @@ void LDAPResource::slotItemRetrievalResult (KJob* job)
     kDebug() << "item retrieval done";
     if ( job->error() ) {
         cancelTask( job->errorString() );
+        return;
     }
+    itemRetrieved(static_cast<RetrieveItemJob*>(job)->getItem());
 }
 
 void LDAPResource::aboutToQuit()
