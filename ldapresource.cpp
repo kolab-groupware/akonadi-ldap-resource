@@ -33,6 +33,7 @@ LDAPResource::LDAPResource( const QString &id )
     mLdapServer.setAuth(KLDAP::LdapServer::Simple);
     mLdapServer.setSecurity(KLDAP::LdapServer::None);
     
+    
 }
 
 LDAPResource::~LDAPResource()
@@ -108,15 +109,24 @@ void LDAPResource::retrieveItems( const Akonadi::Collection &collection )
     // different ways to tell Akonadi when you are done.
     if (!connectToServer()) {
         cancelTask(i18n( "Failed to retrieve collection '%1' is invalid.", collection.remoteId()));
+        kWarning() << "Failed to connect";
         return;
     }
+    setItemStreamingEnabled(true);
     RetrieveItemsJob *job = new RetrieveItemsJob( collection, mLdapConnection, this );
+    connect(job, SIGNAL(contactsRetrieved(Akonadi::Item::List)), SLOT(contactsRetrieved(Akonadi::Item::List)));
     connect(job, SIGNAL(result(KJob*)), SLOT(slotItemsRetrievalResult(KJob*)));
-    job->start();
+}
+
+void LDAPResource::contactsRetrieved(const Item::List &list)
+{
+    kDebug() << list.size();
+    itemsRetrievedIncremental(list, Item::List());
 }
 
 void LDAPResource::slotItemsRetrievalResult (KJob* job)
 {
+    kDebug() << "item retrieval done";
     if ( job->error() ) {
         cancelTask( job->errorString() );
     } else {
@@ -128,12 +138,13 @@ bool LDAPResource::retrieveItem( const Akonadi::Item &item, const QSet<QByteArra
 {
   Q_UNUSED( item );
   Q_UNUSED( parts );
+  kDebug() << parts;
 
   // TODO: this method is called when Akonadi wants more data for a given item.
   // You can only provide the parts that have been requested but you are allowed
   // to provide all in one go
 
-  return true;
+  return false;
 }
 
 void LDAPResource::aboutToQuit()

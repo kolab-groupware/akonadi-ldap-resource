@@ -23,21 +23,30 @@
 #include <akonadi/job.h>
 #include <KLDAP/LdapSearch>
 #include <akonadi/collection.h>
+#include <akonadi/item.h>
 
-class RetrieveItemsJob :  public KJob
+class RetrieveItemsJob :  public Akonadi::Job
 {
     Q_OBJECT
 public:
     explicit RetrieveItemsJob(const Akonadi::Collection &col, KLDAP::LdapConnection &connection, QObject* parent = 0);
-    virtual void start();
+    virtual void doStart();
+    
+signals:
+    void contactsRetrieved(const Akonadi::Item::List &);
     
 private Q_SLOTS:
     void gotSearchResult(KLDAP::LdapSearch *search);
     void gotSearchData(KLDAP::LdapSearch *search, const KLDAP::LdapObject &obj);
+    void localFetchDone(KJob*);
+    void localItemsReceived(const Akonadi::Item::List &);
     
 private:
     bool search();
     KLDAP::LdapSearch mLdapSearch;
+    Akonadi::Item::List mRetrievedItems;
+    Akonadi::Collection mParentCollection;
+    QSet<QString> mLocalItemRemoteIds;
 };
 
 #endif // RETRIEVEITEMSJOB_H

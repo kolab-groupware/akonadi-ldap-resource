@@ -16,10 +16,14 @@
  */
 
 #include "retrieveitemsjob.h"
+#include <KABC/Addressee>
+#include <Akonadi/ItemFetchJob>
+#include <Akonadi/ItemFetchScope>
 
 RetrieveItemsJob::RetrieveItemsJob(const Akonadi::Collection& col, KLDAP::LdapConnection& connection, QObject* parent)
-:   KJob(parent),
-    mLdapSearch(connection)
+:   Job(parent),
+    mLdapSearch(connection),
+    mParentCollection(col)
 {
     Q_ASSERT(connection.handle());
     Q_UNUSED(col);
@@ -30,8 +34,32 @@ RetrieveItemsJob::RetrieveItemsJob(const Akonadi::Collection& col, KLDAP::LdapCo
 
 }
 
-void RetrieveItemsJob::start()
+void RetrieveItemsJob::doStart()
 {
+    kDebug();
+    Akonadi::ItemFetchJob *job = new Akonadi::ItemFetchJob(mParentCollection, this);
+    job->fetchScope().setFetchModificationTime(false);
+    connect(job, SIGNAL(itemsReceived(Akonadi::Item::List)), this, SLOT(localItemsReceived(Akonadi::Item::List)));
+    connect(job, SIGNAL(result(KJob*)), this, SLOT(localFetchDone(KJob*)));
+}
+
+void RetrieveItemsJob::localItemsReceived(const Akonadi::Item::List &items)
+{
+    kDebug() << items.size();
+    foreach (const Akonadi::Item &item, items) {
+        mLocalItemRemoteIds.insert(item.remoteId());
+    }
+}
+
+void RetrieveItemsJob::localFetchDone(KJob *job)
+{
+    kDebug();
+    if (job->error()) {
+        kWarning() << "retrieval failed";
+        setError(KJob::UserDefinedError);
+        emitResult();
+        return;
+    }
     if (!search()) {
         kWarning() << mLdapSearch.errorString();
         kWarning() << "retrieval failed";
@@ -40,11 +68,12 @@ void RetrieveItemsJob::start()
     }
 }
 
+
 bool RetrieveItemsJob::search()
 {
     kDebug();
     QString searchbase("dc=example,dc=org");
-    return mLdapSearch.search( KLDAP::LdapDN(searchbase), KLDAP::LdapUrl::Sub, QString(), QStringList() << "dn" << "objectClass" << "uid");
+    return mLdapSearch.search( KLDAP::LdapDN(searchbase), KLDAP::LdapUrl::Sub, QString("objectClass=inetorgperson"), QStringList() << "dn" << "objectClass" << "uid");
 
 }
 
@@ -52,6 +81,7 @@ void RetrieveItemsJob::gotSearchResult(KLDAP::LdapSearch *search)
 {
   Q_UNUSED( search );
   kWarning();
+  emit contactsRetrieved(mRetrievedItems);
   emitResult();
 }
 
@@ -61,11 +91,18 @@ void RetrieveItemsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Lda
     kWarning();
     kDebug() << "Object:";
     kDebug() << obj.toString();
-    if (obj.values("objectClass").contains("inetorgperson")) {
-        kDebug() << "got person: " << obj.dn().toString();
+    kDebug() << "got person: " << obj.dn().toString();
+    Akonadi::Item item;
+    item.setRemoteId(obj.dn().toString());
+    if (mLocalItemRemoteIds.contains(item.remoteId())) {
+        //TODO detect updates
+        return;
     }
-    if (obj.values("objectClass").contains("groupofuniquenames")) {
-        kDebug() << "got group: " << obj.dn().toString();
-    }
+    KABC::Addressee addressee;
+    addressee.setName(obj.dn().toString());
+    item.setPayload(addressee);
+    item.setMimeType(KABC::Addressee::mimeType());
+    item.setParentCollection(mParentCollection);
+    mRetrievedItems.append(item);
 }
 
