@@ -5,10 +5,24 @@
       xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
       http://www.kde.org/standards/kcfg/1.0/kcfg.xsd" >
   <kcfgfile/>
-  <group name="General">
-    <entry name="ReadOnly" type="Bool">
-      <label>Do not change the actual backend data.</label>
-      <default>true</default>
+  <group name="Server">
+    <entry name="ldaphost" type="String">
+      <label>LDAP hostname or IP address</label>
+      <default>localhost</default>
+    </entry>
+    <entry name="ldapport" type="Int">
+      <label>LDAP port number</label>
+      <default>389</default>
+    </entry>
+  </group>
+  <group name="Login">
+    <entry name="ldapuser" type="String">
+      <label>LDAP user name</label>
+      <default></default>
+    </entry>
+    <entry name="ldappassword" type="String">
+      <label>LDAP user name</label>
+      <default></default>
     </entry>
   </group>
 </kcfg>
