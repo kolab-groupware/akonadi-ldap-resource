@@ -16,7 +16,6 @@
 using namespace Akonadi;
 
 
-
 LDAPResource::LDAPResource( const QString &id )
     : ResourceBase( id )
 {
@@ -24,7 +23,6 @@ LDAPResource::LDAPResource( const QString &id )
     QDBusConnection::sessionBus().registerObject( QLatin1String( "/Settings" ),
                                 Settings::self(), QDBusConnection::ExportAdaptors );
 
-    
     setNeedsNetwork(true);
     mLdapServer.setHost("192.168.122.151");
     mLdapServer.setBaseDn(KLDAP::LdapDN("dc=example,dc=org"));
@@ -32,8 +30,6 @@ LDAPResource::LDAPResource( const QString &id )
     mLdapServer.setPassword("kolab");
     mLdapServer.setAuth(KLDAP::LdapServer::Simple);
     mLdapServer.setSecurity(KLDAP::LdapServer::None);
-    
-    
 }
 
 LDAPResource::~LDAPResource()
@@ -138,15 +134,37 @@ void LDAPResource::slotItemsRetrievalResult (KJob* job)
 
 bool LDAPResource::retrieveItem( const Akonadi::Item &item, const QSet<QByteArray> &parts )
 {
-  Q_UNUSED( item );
-  Q_UNUSED( parts );
-  kDebug() << parts;
+    Q_UNUSED( item );
+    Q_UNUSED( parts );
+    kDebug() << parts << item.remoteId();
+    if (!connectToServer()) {
+        kWarning() << "Failed to connect";
+        return false;
+    }
 
-  // TODO: this method is called when Akonadi wants more data for a given item.
-  // You can only provide the parts that have been requested but you are allowed
-  // to provide all in one go
+    // TODO: this method is called when Akonadi wants more data for a given item.
+    // You can only provide the parts that have been requested but you are allowed
+    // to provide all in one go
+    RetrieveItemsJob *job = new RetrieveItemsJob( item, mLdapConnection, this );
+    connect(job, SIGNAL(contactsRetrieved(Akonadi::Item::List)), SLOT(contactRetrieved(Akonadi::Item::List)));
+    connect(job, SIGNAL(result(KJob*)), SLOT(slotItemRetrievalResult(KJob*)));
+    job->start();
 
-  return false;
+    return true;
+}
+
+void LDAPResource::contactRetrieved(const Item::List &list)
+{
+    Q_ASSERT(list.size() == 1);
+    itemRetrieved(list.at(0));
+}
+
+void LDAPResource::slotItemRetrievalResult (KJob* job)
+{
+    kDebug() << "item retrieval done";
+    if ( job->error() ) {
+        cancelTask( job->errorString() );
+    }
 }
 
 void LDAPResource::aboutToQuit()

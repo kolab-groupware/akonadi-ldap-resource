@@ -30,6 +30,7 @@ class RetrieveItemsJob :  public Akonadi::Job
     Q_OBJECT
 public:
     explicit RetrieveItemsJob(const Akonadi::Collection &col, KLDAP::LdapConnection &connection, QObject* parent = 0);
+    explicit RetrieveItemsJob(const Akonadi::Item &item, KLDAP::LdapConnection &connection, QObject* parent = 0);
     virtual void doStart();
     
 signals:
@@ -38,12 +39,16 @@ signals:
 private Q_SLOTS:
     void gotSearchResult(KLDAP::LdapSearch *search);
     void gotSearchData(KLDAP::LdapSearch *search, const KLDAP::LdapObject &obj);
+    void localFetchDone(KJob*);
+    void localItemsReceived(const Akonadi::Item::List &);
     
 private:
-    bool search();
+    void search();
     KLDAP::LdapSearch mLdapSearch;
     Akonadi::Item::List mRetrievedItems;
     Akonadi::Collection mParentCollection;
+    QSet<QString> mLocalItemRemoteIds;
+    const Akonadi::Item mItemToFetch;
 };
 
 #endif // RETRIEVEITEMSJOB_H

@@ -28,6 +28,8 @@ protected:
 private Q_SLOTS:
     void contactsRetrieved(const Akonadi::Item::List &);
     void slotItemsRetrievalResult (KJob* job);
+    void contactRetrieved(const Akonadi::Item::List &);
+    void slotItemRetrievalResult (KJob* job);
     
 
 private:

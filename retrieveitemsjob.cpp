@@ -19,6 +19,7 @@
 #include <KABC/Addressee>
 #include <Akonadi/ItemFetchJob>
 #include <Akonadi/ItemFetchScope>
+#include <quuid.h>
 
 RetrieveItemsJob::RetrieveItemsJob(const Akonadi::Collection& col, KLDAP::LdapConnection& connection, QObject* parent)
 :   Job(parent),
@@ -26,25 +27,69 @@ RetrieveItemsJob::RetrieveItemsJob(const Akonadi::Collection& col, KLDAP::LdapCo
     mParentCollection(col)
 {
     Q_ASSERT(connection.handle());
-    Q_UNUSED(col);
     connect( &mLdapSearch, SIGNAL(result(KLDAP::LdapSearch*)),
            this, SLOT(gotSearchResult(KLDAP::LdapSearch*)) );
     connect( &mLdapSearch, SIGNAL(data(KLDAP::LdapSearch*,KLDAP::LdapObject)),
            this, SLOT(gotSearchData(KLDAP::LdapSearch*,KLDAP::LdapObject)) );
-
 }
+
+RetrieveItemsJob::RetrieveItemsJob(const Akonadi::Item& item, KLDAP::LdapConnection& connection, QObject* parent)
+:   Job(parent),
+    mLdapSearch(connection),
+    mItemToFetch(item)
+{
+    Q_ASSERT(connection.handle());
+    connect( &mLdapSearch, SIGNAL(result(KLDAP::LdapSearch*)),
+           this, SLOT(gotSearchResult(KLDAP::LdapSearch*)) );
+    connect( &mLdapSearch, SIGNAL(data(KLDAP::LdapSearch*,KLDAP::LdapObject)),
+           this, SLOT(gotSearchData(KLDAP::LdapSearch*,KLDAP::LdapObject)) );
+}
+
 
 void RetrieveItemsJob::doStart()
 {
     kDebug();
-    search();
+    if (mItemToFetch.isValid()) {
+        search();
+    } else {
+        Akonadi::ItemFetchJob *job = new Akonadi::ItemFetchJob(mParentCollection, this);
+        job->fetchScope().setFetchModificationTime(false);
+        job->fetchScope().setCacheOnly(true);
+        job->fetchScope().fetchFullPayload(false);
+        connect(job, SIGNAL(itemsReceived(Akonadi::Item::List)), this, SLOT(localItemsReceived(Akonadi::Item::List)));
+        connect(job, SIGNAL(result(KJob*)), this, SLOT(localFetchDone(KJob*)));
+    }
 }
 
-bool RetrieveItemsJob::search()
+void RetrieveItemsJob::localItemsReceived(const Akonadi::Item::List &items)
+{
+    kDebug() << items.size();
+    foreach (const Akonadi::Item &item, items) {
+        mLocalItemRemoteIds.insert(item.remoteId());
+    }
+}
+
+void RetrieveItemsJob::localFetchDone(KJob *job)
+{
+    kDebug();
+    if (job->error()) {
+        kWarning() << "retrieval failed";
+        setError(KJob::UserDefinedError);
+        emitResult();
+        return;
+    }
+}
+
+void RetrieveItemsJob::search()
 {
     kDebug();
     QString searchbase("dc=example,dc=org");
-    const int ret = mLdapSearch.search( KLDAP::LdapDN(searchbase), KLDAP::LdapUrl::Sub, QString("objectClass=inetorgperson"), QStringList() << "dn" << "objectClass" << "uid");
+    int ret(0);
+    if (mItemToFetch.isValid()) {
+        ret = mLdapSearch.search( KLDAP::LdapDN(mItemToFetch.remoteId()), KLDAP::LdapUrl::Base, QString("objectClass=*"), QStringList() << "dn" << "objectClass" << "uid");
+    } else {
+        ret = mLdapSearch.search( KLDAP::LdapDN(searchbase), KLDAP::LdapUrl::Sub, QString("objectClass=inetorgperson"), QStringList() << "dn" << "objectClass" << "uid");
+    }
     if (!ret) {
         kWarning() << mLdapSearch.errorString();
         kWarning() << "retrieval failed";
@@ -70,7 +115,13 @@ void RetrieveItemsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Lda
     kDebug() << "got person: " << obj.dn().toString();
     Akonadi::Item item;
     item.setRemoteId(obj.dn().toString());
+    if (mLocalItemRemoteIds.contains(item.remoteId())) {
+        //TODO detect updates
+        kDebug() << "skipping " << item.remoteId();
+        return;
+    }
     KABC::Addressee addressee;
+    addressee.setUid(QUuid::createUuid().toString());
     addressee.setName(obj.dn().toString());
     item.setPayload(addressee);
     item.setMimeType(KABC::Addressee::mimeType());
