@@ -22,6 +22,7 @@
 #include <Akonadi/ItemFetchScope>
 #include <Akonadi/ItemCreateJob>
 #include <Akonadi/ItemModifyJob>
+#include <Akonadi/ItemDeleteJob>
 #include <quuid.h>
 
 RetrieveItemsJob::RetrieveItemsJob(const Akonadi::Collection& col, KLDAP::LdapConnection& connection, QObject* parent)
@@ -85,6 +86,20 @@ void RetrieveItemsJob::search()
 void RetrieveItemsJob::gotSearchResult(KLDAP::LdapSearch *search)
 {
     Q_UNUSED( search );
+    Akonadi::Item::List toRemove;
+    toRemove.reserve(mLocalItems.size());
+    QHash<QString, QString>::const_iterator it = mLocalItems.constBegin();
+    for (; it != mLocalItems.constEnd(); it++) {
+        kDebug() << "deleted " << it.key();
+        Akonadi::Item item;
+        item.setRemoteId(it.key());
+        toRemove << item;
+    }
+    if (!toRemove.isEmpty()) {
+        Akonadi::ItemDeleteJob *job = new Akonadi::ItemDeleteJob(toRemove, transaction());
+        transaction()->setIgnoreJobFailure(job);
+    }
+        
     if (!mTransaction) { // no jobs created here -> done
         emitResult();
     } else {
@@ -106,15 +121,16 @@ void RetrieveItemsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Lda
     item.setParentCollection(mParentCollection);
     item.setRemoteRevision(LDAPMapper::getTimestamp(obj));
     
-    if (mLocalItems.contains(item.remoteId())) {
-        if (mLocalItems.value(item.remoteId()) == obj.value("modifyTimestamp")) {
+    const QHash<QString, QString>::iterator it = mLocalItems.find(item.remoteId());
+    if (it != mLocalItems.end()) {
+        if (*it == LDAPMapper::getTimestamp(obj)) {
             kDebug() << "skipping " << item.remoteId();
-            return;
         } else {
             kDebug() << "modification";
             new Akonadi::ItemModifyJob(item, transaction());
-            return;
         }
+        mLocalItems.erase(it);
+        return;
     }
     //new item
     new Akonadi::ItemCreateJob(item, mParentCollection, transaction());
