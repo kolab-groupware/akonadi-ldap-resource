@@ -116,23 +116,17 @@ void LDAPResource::retrieveCollections()
     RetrieveGroupsJob *retrieveJob = new RetrieveGroupsJob(mLdapServer.baseDn().toString(), root, mLdapConnection, this);
     connect(retrieveJob, SIGNAL(groupsRetrieved(Akonadi::Collection::List)), SLOT(groupsRetrieved(Akonadi::Collection::List)));
     connect(retrieveJob, SIGNAL(result(KJob*)), SLOT(slotGroupsRetrievalResult(KJob*)));
-    
-    setCollectionStreamingEnabled(true);
-    collectionsRetrievedIncremental(Collection::List() << root, Collection::List());
-//     collectionsRetrieved(list);
 }
 
 void LDAPResource::groupsRetrieved(const Collection::List &list)
 {
-    collectionsRetrievedIncremental(list, Collection::List());
+    collectionsRetrieved(list);
 }
 
 void LDAPResource::slotGroupsRetrievalResult(KJob* job)
 {
     if (job->error()) {
         cancelTask();
-    } else {
-        collectionsRetrievalDone();
     }
 }
 

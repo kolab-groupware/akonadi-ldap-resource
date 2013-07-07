@@ -37,6 +37,7 @@ RetrieveGroupsJob::RetrieveGroupsJob(const QString &searchbase, const Akonadi::C
            this, SLOT(gotSearchResult(KLDAP::LdapSearch*)) );
     connect( &mLdapSearch, SIGNAL(data(KLDAP::LdapSearch*,KLDAP::LdapObject)),
            this, SLOT(gotSearchData(KLDAP::LdapSearch*,KLDAP::LdapObject)) );
+    mRetrievedCollections << col;
 }
 
 void RetrieveGroupsJob::doStart()
