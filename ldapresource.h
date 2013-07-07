@@ -26,6 +26,8 @@ protected:
     virtual void aboutToQuit();
     
 private Q_SLOTS:
+    void groupsRetrieved(const Akonadi::Collection::List &);
+    void slotGroupsRetrievalResult (KJob* job);
     void contactsRetrieved(const Akonadi::Item::List &);
     void slotItemsRetrievalResult (KJob* job);
     void slotItemRetrievalResult (KJob* job);

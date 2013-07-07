@@ -1,6 +1,7 @@
 #include "ldapresource.h"
 #include "retrieveitemsjob.h"
 #include "retrieveitemjob.h"
+#include "retrievegroupsjob.h"
 
 #include "settings.h"
 #include "settingsadaptor.h"
@@ -92,11 +93,33 @@ void LDAPResource::retrieveCollections()
     mimeTypes << Collection::mimeType();
     mimeTypes << KABC::Addressee::mimeType();
     root.setContentMimeTypes(mimeTypes);
+    
+    if (!connectToServer()) {
+        cancelTask(i18n( "Failed to retrieve collections."));
+        kWarning() << "Failed to connect";
+        return;
+    }
+    RetrieveGroupsJob *retrieveJob = new RetrieveGroupsJob(root, mLdapConnection, this);
+    connect(retrieveJob, SIGNAL(groupsRetrieved(Akonadi::Collection::List)), SLOT(groupsRetrieved(Akonadi::Collection::List)));
+    connect(retrieveJob, SIGNAL(result(KJob*)), SLOT(slotGroupsRetrievalResult(KJob*)));
+    
+    setCollectionStreamingEnabled(true);
+    collectionsRetrievedIncremental(Collection::List() << root, Collection::List());
+//     collectionsRetrieved(list);
+}
 
-    Collection::List list;
-    list << root;
-//     list += listRecursive( root, dir );
-    collectionsRetrieved(list);
+void LDAPResource::groupsRetrieved(const Collection::List &list)
+{
+    collectionsRetrievedIncremental(list, Collection::List());
+}
+
+void LDAPResource::slotGroupsRetrievalResult(KJob* job)
+{
+    if (job->error()) {
+        cancelTask();
+    } else {
+        collectionsRetrievalDone();
+    }
 }
 
 void LDAPResource::retrieveItems( const Akonadi::Collection &collection )
@@ -114,9 +137,13 @@ void LDAPResource::retrieveItems( const Akonadi::Collection &collection )
         kWarning() << "Failed to connect";
         return;
     }
-    RetrieveItemsJob *job = new RetrieveItemsJob( collection, mLdapConnection, this );
-//     connect(job, SIGNAL(contactsRetrieved(Akonadi::Item::List)), SLOT(contactsRetrieved(Akonadi::Item::List)));
-    connect(job, SIGNAL(result(KJob*)), SLOT(slotItemsRetrievalResult(KJob*)));
+    if (collection.parentCollection() == Collection::root()) {
+        RetrieveItemsJob *job = new RetrieveItemsJob( collection, mLdapConnection, this );
+    //     connect(job, SIGNAL(contactsRetrieved(Akonadi::Item::List)), SLOT(contactsRetrieved(Akonadi::Item::List)));
+        connect(job, SIGNAL(result(KJob*)), SLOT(slotItemsRetrievalResult(KJob*)));
+    } else {
+        //Groups
+    }
 }
 
 void LDAPResource::contactsRetrieved(const Item::List &list)
