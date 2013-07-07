@@ -25,6 +25,7 @@
 #include <akonadi/collection.h>
 #include <akonadi/item.h>
 #include <akonadi/transactionsequence.h>
+#include <QDateTime>
 
 class RetrieveItemsJob :  public Akonadi::Job
 {
@@ -46,11 +47,13 @@ private Q_SLOTS:
 private:
     Akonadi::TransactionSequence *transaction();
     void search();
+    void done();
     KLDAP::LdapSearch mLdapSearch;
     Akonadi::Collection mParentCollection;
     QHash<QString, QString> mLocalItems;
     Akonadi::TransactionSequence *mTransaction;
     QString mSearchbase;
+    QTime mTime;
 };
 
 #endif // RETRIEVEITEMSJOB_H

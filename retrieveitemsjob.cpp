@@ -49,6 +49,7 @@ void RetrieveItemsJob::doStart()
     job->fetchScope().fetchFullPayload(false);
     connect(job, SIGNAL(itemsReceived(Akonadi::Item::List)), this, SLOT(localItemsReceived(Akonadi::Item::List)));
     connect(job, SIGNAL(result(KJob*)), this, SLOT(localFetchDone(KJob*)));
+    mTime.start();
 }
 
 void RetrieveItemsJob::localItemsReceived(const Akonadi::Item::List &items)
@@ -113,7 +114,7 @@ void RetrieveItemsJob::gotSearchResult(KLDAP::LdapSearch *search)
         }
     }
     if (!mTransaction) { // no jobs created here -> done
-        emitResult();
+        done();
     } else {
         mTransaction->commit();
     }
@@ -163,6 +164,13 @@ void RetrieveItemsJob::transactionDone (KJob* job)
     if ( job->error() ) {
         return; // handled by base class
     }
+    done();
+}
+
+void RetrieveItemsJob::done()
+{
+    kDebug() << "Done. Took " << mTime.elapsed()/1000.0 << " s";
     emitResult();
-}        
+}
+
 
