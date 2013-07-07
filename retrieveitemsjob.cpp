@@ -23,6 +23,7 @@
 #include <Akonadi/ItemCreateJob>
 #include <Akonadi/ItemModifyJob>
 #include <Akonadi/ItemDeleteJob>
+#include <kldap/ldapdefs.h>
 #include <quuid.h>
 
 RetrieveItemsJob::RetrieveItemsJob(const Akonadi::Collection& col, KLDAP::LdapConnection& connection, QObject* parent)
@@ -86,20 +87,31 @@ void RetrieveItemsJob::search()
 void RetrieveItemsJob::gotSearchResult(KLDAP::LdapSearch *search)
 {
     Q_UNUSED( search );
-    Akonadi::Item::List toRemove;
-    toRemove.reserve(mLocalItems.size());
-    QHash<QString, QString>::const_iterator it = mLocalItems.constBegin();
-    for (; it != mLocalItems.constEnd(); it++) {
-        kDebug() << "deleted " << it.key();
-        Akonadi::Item item;
-        item.setRemoteId(it.key());
-        toRemove << item;
+    if (search->error()) {
+        kWarning() << search->error() << search->errorString(); 
+        switch (search->error()) {
+            case KLDAP_SIZELIMIT_EXCEEDED:
+                kWarning() << "Sizelimit exceeded";
+                break;
+            default:
+                kWarning() << "Unknown error";
+        }
+    } else {
+        //only do the removal if we got all entires without anything missing
+        Akonadi::Item::List toRemove;
+        toRemove.reserve(mLocalItems.size());
+        QHash<QString, QString>::const_iterator it = mLocalItems.constBegin();
+        for (; it != mLocalItems.constEnd(); it++) {
+            kDebug() << "deleted " << it.key();
+            Akonadi::Item item;
+            item.setRemoteId(it.key());
+            toRemove << item;
+        }
+        if (!toRemove.isEmpty()) {
+            Akonadi::ItemDeleteJob *job = new Akonadi::ItemDeleteJob(toRemove, transaction());
+            transaction()->setIgnoreJobFailure(job);
+        }
     }
-    if (!toRemove.isEmpty()) {
-        Akonadi::ItemDeleteJob *job = new Akonadi::ItemDeleteJob(toRemove, transaction());
-        transaction()->setIgnoreJobFailure(job);
-    }
-        
     if (!mTransaction) { // no jobs created here -> done
         emitResult();
     } else {
