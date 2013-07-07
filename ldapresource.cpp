@@ -2,6 +2,7 @@
 #include "retrieveitemsjob.h"
 #include "retrieveitemjob.h"
 #include "retrievegroupsjob.h"
+#include "retrievegroupmembersjob.h"
 
 #include "settings.h"
 #include "settingsadaptor.h"
@@ -142,7 +143,8 @@ void LDAPResource::retrieveItems( const Akonadi::Collection &collection )
         connect(job, SIGNAL(result(KJob*)), SLOT(slotItemsRetrievalResult(KJob*)));
     } else {
         //Groups
-        cancelTask();
+        RetrieveGroupMembersJob *job = new RetrieveGroupMembersJob(mLdapServer.baseDn().toString(), collection, mLdapConnection, this);
+        connect(job, SIGNAL(result(KJob*)), SLOT(slotItemsRetrievalResult(KJob*)));
     }
 }
 
