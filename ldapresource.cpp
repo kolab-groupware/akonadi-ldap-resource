@@ -37,6 +37,9 @@ LDAPResource::LDAPResource( const QString &id )
     changeRecorder()->itemFetchScope().fetchFullPayload(false);
     changeRecorder()->itemFetchScope().setAncestorRetrieval( ItemFetchScope::None );
     changeRecorder()->setChangeRecordingEnabled(false);
+    
+    //Ensure the root collection is immmediately created
+    synchronizeCollectionTree();
 }
 
 LDAPResource::~LDAPResource()
