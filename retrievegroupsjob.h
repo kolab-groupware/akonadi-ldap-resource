@@ -30,7 +30,7 @@ class RetrieveGroupsJob :  public Akonadi::Job
 {
     Q_OBJECT
 public:
-    explicit RetrieveGroupsJob(const Akonadi::Collection &col, KLDAP::LdapConnection &connection, QObject* parent = 0);
+    explicit RetrieveGroupsJob(const QString &searchbase, const Akonadi::Collection &col, KLDAP::LdapConnection &connection, QObject* parent = 0);
     virtual void doStart();
     
 signals:

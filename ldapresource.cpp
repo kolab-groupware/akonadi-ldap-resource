@@ -99,7 +99,7 @@ void LDAPResource::retrieveCollections()
         kWarning() << "Failed to connect";
         return;
     }
-    RetrieveGroupsJob *retrieveJob = new RetrieveGroupsJob(root, mLdapConnection, this);
+    RetrieveGroupsJob *retrieveJob = new RetrieveGroupsJob(mLdapServer.baseDn().toString(), root, mLdapConnection, this);
     connect(retrieveJob, SIGNAL(groupsRetrieved(Akonadi::Collection::List)), SLOT(groupsRetrieved(Akonadi::Collection::List)));
     connect(retrieveJob, SIGNAL(result(KJob*)), SLOT(slotGroupsRetrievalResult(KJob*)));
     
@@ -138,19 +138,12 @@ void LDAPResource::retrieveItems( const Akonadi::Collection &collection )
         return;
     }
     if (collection.parentCollection() == Collection::root()) {
-        RetrieveItemsJob *job = new RetrieveItemsJob( collection, mLdapConnection, this );
-    //     connect(job, SIGNAL(contactsRetrieved(Akonadi::Item::List)), SLOT(contactsRetrieved(Akonadi::Item::List)));
+        RetrieveItemsJob *job = new RetrieveItemsJob(mLdapServer.baseDn().toString(), collection, mLdapConnection, this);
         connect(job, SIGNAL(result(KJob*)), SLOT(slotItemsRetrievalResult(KJob*)));
     } else {
         //Groups
+        cancelTask();
     }
-}
-
-void LDAPResource::contactsRetrieved(const Item::List &list)
-{
-//     setItemStreamingEnabled(true);
-//     kDebug() << list.size();
-//     itemsRetrievedIncremental(list, Item::List());
 }
 
 void LDAPResource::slotItemsRetrievalResult (KJob* job)
@@ -176,7 +169,7 @@ bool LDAPResource::retrieveItem( const Akonadi::Item &item, const QSet<QByteArra
     // TODO: this method is called when Akonadi wants more data for a given item.
     // You can only provide the parts that have been requested but you are allowed
     // to provide all in one go
-    RetrieveItemJob *job = new RetrieveItemJob(item, mLdapConnection, this);
+    RetrieveItemJob *job = new RetrieveItemJob(mLdapServer.baseDn().toString(), item, mLdapConnection, this);
     connect(job, SIGNAL(result(KJob*)), SLOT(slotItemRetrievalResult(KJob*)));
     return true;
 }

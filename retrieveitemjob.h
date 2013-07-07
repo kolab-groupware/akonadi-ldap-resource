@@ -29,7 +29,7 @@ class RetrieveItemJob :  public Akonadi::Job
 {
     Q_OBJECT
 public:
-    explicit RetrieveItemJob(const Akonadi::Item &item, KLDAP::LdapConnection &connection, QObject* parent = 0);
+    explicit RetrieveItemJob(const QString &searchbase, const Akonadi::Item &item, KLDAP::LdapConnection &connection, QObject* parent = 0);
     virtual void doStart();
     Akonadi::Item getItem() const;
     
@@ -41,6 +41,7 @@ private:
     void search();
     KLDAP::LdapSearch mLdapSearch;
     Akonadi::Item mItemToFetch;
+    QString mSearchbase;
 };
 
 #endif // RETRIEVEITEMJOB_H

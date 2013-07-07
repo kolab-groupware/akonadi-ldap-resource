@@ -17,8 +17,8 @@ int main(int argc, char **argv)
     mLdapServer.setPassword("kolab");
     mLdapServer.setAuth(KLDAP::LdapServer::Simple);
     mLdapServer.setSecurity(KLDAP::LdapServer::None);
-    mLdapServer.setTimeout(3);
-    mLdapServer.setTimeLimit(10);
+//     mLdapServer.setTimeout(3);
+//     mLdapServer.setTimeLimit(10);
     
     kDebug() << mLdapServer.host();
     mLdapConnection.setServer(mLdapServer);
@@ -37,6 +37,6 @@ int main(int argc, char **argv)
 //     QString baseDN("dc=example,dc=org");
 //     mLdapSearch.search( KLDAP::LdapDN(baseDN), KLDAP::LdapUrl::Base, QString(), QStringList() << "dn" << "objectClass" );
     
-    RetrieveItemsJob *job = new RetrieveItemsJob(Akonadi::Collection(), mLdapConnection);
+    RetrieveItemsJob *job = new RetrieveItemsJob(mLdapServer.baseDn().toString(), Akonadi::Collection(), mLdapConnection);
     job->exec();
 }

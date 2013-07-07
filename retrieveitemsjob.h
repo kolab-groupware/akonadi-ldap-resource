@@ -30,7 +30,7 @@ class RetrieveItemsJob :  public Akonadi::Job
 {
     Q_OBJECT
 public:
-    explicit RetrieveItemsJob(const Akonadi::Collection &col, KLDAP::LdapConnection &connection, QObject* parent = 0);
+    explicit RetrieveItemsJob(const QString &searchbase, const Akonadi::Collection &col, KLDAP::LdapConnection &connection, QObject* parent = 0);
     virtual void doStart();
     
 signals:
@@ -50,6 +50,7 @@ private:
     Akonadi::Collection mParentCollection;
     QHash<QString, QString> mLocalItems;
     Akonadi::TransactionSequence *mTransaction;
+    QString mSearchbase;
 };
 
 #endif // RETRIEVEITEMSJOB_H

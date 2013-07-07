@@ -22,10 +22,11 @@
 #include <Akonadi/ItemFetchScope>
 #include <quuid.h>
 
-RetrieveItemJob::RetrieveItemJob(const Akonadi::Item& item, KLDAP::LdapConnection& connection, QObject* parent)
+RetrieveItemJob::RetrieveItemJob(const QString &searchbase, const Akonadi::Item& item, KLDAP::LdapConnection& connection, QObject* parent)
 :   Job(parent),
     mLdapSearch(connection),
-    mItemToFetch(item)
+    mItemToFetch(item),
+    mSearchbase(searchbase)
 {
     Q_ASSERT(connection.handle());
     connect( &mLdapSearch, SIGNAL(result(KLDAP::LdapSearch*)),
@@ -44,8 +45,7 @@ void RetrieveItemJob::doStart()
 void RetrieveItemJob::search()
 {
     kDebug();
-    QString searchbase("dc=example,dc=org");
-    const int ret = mLdapSearch.search( KLDAP::LdapDN(searchbase), KLDAP::LdapUrl::Sub, QString("%1=%2").arg(LDAPMapper::getAttribute(LDAPMapper::UniqueIdentifier)).arg(mItemToFetch.remoteId()), LDAPMapper::requestedAttributes());
+    const int ret = mLdapSearch.search( KLDAP::LdapDN(mSearchbase), KLDAP::LdapUrl::Sub, QString("%1=%2").arg(LDAPMapper::getAttribute(LDAPMapper::UniqueIdentifier)).arg(mItemToFetch.remoteId()), LDAPMapper::requestedAttributes());
     if (!ret) {
         kWarning() << mLdapSearch.errorString();
         kWarning() << "retrieval failed";

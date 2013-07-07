@@ -26,11 +26,12 @@
 #include <kldap/ldapdefs.h>
 #include <quuid.h>
 
-RetrieveItemsJob::RetrieveItemsJob(const Akonadi::Collection& col, KLDAP::LdapConnection& connection, QObject* parent)
+RetrieveItemsJob::RetrieveItemsJob(const QString &searchbase, const Akonadi::Collection& col, KLDAP::LdapConnection& connection, QObject* parent)
 :   Job(parent),
     mLdapSearch(connection),
     mParentCollection(col),
-    mTransaction(0)
+    mTransaction(0),
+    mSearchbase(searchbase)
 {
     Q_ASSERT(connection.handle());
     connect( &mLdapSearch, SIGNAL(result(KLDAP::LdapSearch*)),
@@ -74,8 +75,7 @@ void RetrieveItemsJob::localFetchDone(KJob *job)
 void RetrieveItemsJob::search()
 {
     kDebug();
-    QString searchbase("dc=example,dc=org");
-    const int ret = mLdapSearch.search( KLDAP::LdapDN(searchbase), KLDAP::LdapUrl::Sub, QLatin1String("objectClass=inetorgperson"), LDAPMapper::requestedAttributes());
+    const int ret = mLdapSearch.search( KLDAP::LdapDN(mSearchbase), KLDAP::LdapUrl::Sub, QLatin1String("objectClass=inetorgperson"), LDAPMapper::requestedAttributes(), 500);
     if (!ret) {
         kWarning() << mLdapSearch.errorString();
         kWarning() << "retrieval failed";

@@ -26,11 +26,11 @@
 #include <kldap/ldapdefs.h>
 #include <quuid.h>
 
-RetrieveGroupsJob::RetrieveGroupsJob(const Akonadi::Collection& col, KLDAP::LdapConnection& connection, QObject* parent)
+RetrieveGroupsJob::RetrieveGroupsJob(const QString &searchbase, const Akonadi::Collection& col, KLDAP::LdapConnection& connection, QObject* parent)
 :   Job(parent),
     mLdapSearch(connection),
     mParentCollection(col),
-    mSearchbase("dc=example,dc=org")
+    mSearchbase(searchbase)
 {
     Q_ASSERT(connection.handle());
     connect( &mLdapSearch, SIGNAL(result(KLDAP::LdapSearch*)),
