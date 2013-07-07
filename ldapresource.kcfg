@@ -16,13 +16,17 @@
     </entry>
   </group>
   <group name="Login">
-    <entry name="ldapuser" type="String">
-      <label>LDAP user name</label>
-      <default></default>
+    <entry name="ldapbinddn" type="String">
+      <label>LDAP Bind DN</label>
+      <default>uid=user,ou=People,dc=example,dc=org</default>
     </entry>
     <entry name="ldappassword" type="String">
       <label>LDAP user name</label>
       <default></default>
+    </entry>
+    <entry name="ldapdn" type="String">
+      <label>LDAP DN</label>
+      <default>dc=example,dc=org</default>
     </entry>
   </group>
 </kcfg>

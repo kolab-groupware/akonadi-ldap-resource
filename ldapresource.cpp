@@ -32,12 +32,7 @@ LDAPResource::LDAPResource( const QString &id )
                                 Settings::self(), QDBusConnection::ExportAdaptors );
 
     setNeedsNetwork(true);
-    mLdapServer.setHost("192.168.122.231");
-    mLdapServer.setBaseDn(KLDAP::LdapDN("dc=example,dc=org"));
-    mLdapServer.setBindDn("uid=doe,ou=People,dc=example,dc=org");
-    mLdapServer.setPassword("Welcome2KolabSystems");
-    mLdapServer.setAuth(KLDAP::LdapServer::Simple);
-    mLdapServer.setSecurity(KLDAP::LdapServer::None);
+    loadConfig();
     
     changeRecorder()->itemFetchScope().fetchFullPayload(false);
     changeRecorder()->itemFetchScope().setAncestorRetrieval( ItemFetchScope::None );
@@ -46,6 +41,21 @@ LDAPResource::LDAPResource( const QString &id )
 
 LDAPResource::~LDAPResource()
 {
+}
+
+void LDAPResource::loadConfig()
+{
+    mLdapConnection.close();
+    const Settings *s = Settings::self();
+    mLdapServer.setHost(s->ldaphost());
+    mLdapServer.setBaseDn(KLDAP::LdapDN(s->ldapdn()));
+    mLdapServer.setBindDn(s->ldapbinddn());
+    mLdapServer.setPassword(s->ldappassword());
+    mLdapServer.setAuth(KLDAP::LdapServer::Simple);
+    mLdapServer.setSecurity(KLDAP::LdapServer::None);
+    kDebug() << s->ldaphost();
+    kDebug() << s->ldapdn();
+    kDebug() << s->ldapbinddn();
 }
 
 bool LDAPResource::connectToServer()
@@ -199,17 +209,6 @@ void LDAPResource::aboutToQuit()
 void LDAPResource::configure( WId windowId )
 {
   Q_UNUSED( windowId );
-
-  // TODO: this method is usually called when a new resource is being
-  // added to the Akonadi setup. You can do any kind of user interaction here,
-  // e.g. showing dialogs.
-  // The given window ID is usually useful to get the correct
-  // "on top of parent" behavior if the running window manager applies any kind
-  // of focus stealing prevention technique
-  //
-  // If the configuration dialog has been accepted by the user by clicking Ok,
-  // the signal configurationDialogAccepted() has to be emitted, otherwise, if
-  // the user canceled the dialog, configurationDialogRejected() has to be emitted.
   
   KConfigDialog* dialog = KConfigDialog::exists( "settings" );
 
@@ -219,10 +218,11 @@ void LDAPResource::configure( WId windowId )
     dialog = new KConfigDialog( 0, "settings", Settings::self() );
 
     KLDAP::LdapConfigWidget::WinFlags featureFlags
-      = KLDAP::LdapConfigWidget::W_USER
+      = KLDAP::LdapConfigWidget::W_BINDDN
       | KLDAP::LdapConfigWidget::W_PASS
       | KLDAP::LdapConfigWidget::W_HOST
-      | KLDAP::LdapConfigWidget::W_PORT;
+      | KLDAP::LdapConfigWidget::W_PORT
+      | KLDAP::LdapConfigWidget::W_DN;
     KLDAP::LdapConfigWidget *configWidget
       = new KLDAP::LdapConfigWidget( featureFlags, dialog );
 
@@ -238,7 +238,10 @@ void LDAPResource::configure( WId windowId )
     KWindowSystem::setMainWindow( dialog, windowId );
   }
 
-  dialog->show();
+  if (dialog->exec() == QDialog::Accepted) {
+      kDebug() << "dialog accepted";
+      loadConfig();
+  }
 }
 
 AKONADI_RESOURCE_MAIN( LDAPResource )

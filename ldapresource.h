@@ -33,6 +33,7 @@ private Q_SLOTS:
     
 
 private:
+    void loadConfig();
     bool connectToServer();
     KLDAP::LdapServer mLdapServer;
     KLDAP::LdapConnection mLdapConnection;
