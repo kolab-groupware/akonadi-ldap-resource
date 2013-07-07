@@ -15,8 +15,11 @@
 #include <akonadi/kmime/messageparts.h>
 
 #include <KABC/Addressee>
+#include <KLDAP/LdapConfigWidget>
 #include <KLDAP/LdapServer>
+#include <kconfigdialog.h>
 #include <klocalizedstring.h>
+#include <kwindowsystem.h>
 #include <Akonadi/ChangeRecorder>
 using namespace Akonadi;
 
@@ -207,6 +210,35 @@ void LDAPResource::configure( WId windowId )
   // If the configuration dialog has been accepted by the user by clicking Ok,
   // the signal configurationDialogAccepted() has to be emitted, otherwise, if
   // the user canceled the dialog, configurationDialogRejected() has to be emitted.
+  
+  KConfigDialog* dialog = KConfigDialog::exists( "settings" );
+
+  if ( !dialog ) {
+    // KConfigDialog didn't find an instance of this dialog, so lets
+    // create it :
+    dialog = new KConfigDialog( 0, "settings", Settings::self() );
+
+    KLDAP::LdapConfigWidget::WinFlags featureFlags
+      = KLDAP::LdapConfigWidget::W_USER
+      | KLDAP::LdapConfigWidget::W_PASS
+      | KLDAP::LdapConfigWidget::W_HOST
+      | KLDAP::LdapConfigWidget::W_PORT;
+    KLDAP::LdapConfigWidget *configWidget
+      = new KLDAP::LdapConfigWidget( featureFlags, dialog );
+
+    dialog->addPage( configWidget, i18n("LDAP Settings"), "settings" );
+
+    connect( dialog, SIGNAL(okClicked()),
+             this, SIGNAL(configurationDialogAccepted()) );
+    connect( dialog, SIGNAL(cancelClicked()),
+             this, SIGNAL(configurationDialogRejected()) );
+  }
+
+  if ( windowId ) {
+    KWindowSystem::setMainWindow( dialog, windowId );
+  }
+
+  dialog->show();
 }
 
 AKONADI_RESOURCE_MAIN( LDAPResource )
