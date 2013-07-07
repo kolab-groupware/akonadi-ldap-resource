@@ -28,6 +28,10 @@ public:
     static KABC::Addressee getAddressee(const KLDAP::LdapObject &obj);
     static QString getStableIdentifier(const KLDAP::LdapObject &obj);
     static QString getTimestamp(const KLDAP::LdapObject &obj);
+    enum Attribute {
+        UniqueIdentifier
+    };
+    static QString getAttribute(Attribute attr);
 };
 
 #endif

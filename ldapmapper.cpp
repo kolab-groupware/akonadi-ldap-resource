@@ -15,6 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "ldapmapper.h"
+#include <kdebug.h>
+
+QString LDAPMapper::getAttribute(LDAPMapper::Attribute attr)
+{
+    switch (attr) {
+        case UniqueIdentifier:
+            return QLatin1String("nsuniqueid");
+        default:
+            kWarning() << "unhandled attribute";
+            Q_ASSERT(0);
+    }
+    return QString();
+}
 
 QStringList LDAPMapper::requestedAttributes()
 {
