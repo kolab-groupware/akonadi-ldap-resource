@@ -94,6 +94,9 @@ void RetrieveItemsJob::gotSearchResult(KLDAP::LdapSearch *search)
             case KLDAP_SIZELIMIT_EXCEEDED:
                 kWarning() << "Sizelimit exceeded";
                 break;
+            case KLDAP_ADMINLIMIT_EXCEEDED:
+                kWarning() << "Administrative limit exceeded";
+                break;
             default:
                 kWarning() << "Unknown error";
         }
