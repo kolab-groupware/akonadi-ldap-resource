@@ -257,6 +257,7 @@ void LDAPResource::configure( WId windowId )
     if (dialog->exec() == QDialog::Accepted) {
         kDebug() << "dialog accepted";
         loadConfig();
+        synchronizeCollectionTree();
     }
 }
 
