@@ -76,7 +76,7 @@ void RetrieveItemsJob::localFetchDone(KJob *job)
 void RetrieveItemsJob::search()
 {
     kDebug();
-    const int ret = mLdapSearch.search( KLDAP::LdapDN(mSearchbase), KLDAP::LdapUrl::Sub, QLatin1String("objectClass=inetorgperson"), LDAPMapper::requestedAttributes(), 500);
+    const int ret = mLdapSearch.search( KLDAP::LdapDN(mSearchbase), KLDAP::LdapUrl::Sub, QLatin1String("objectClass=inetorgperson"), LDAPMapper::requestedAttributes());
     if (!ret) {
         kWarning() << mLdapSearch.errorString();
         kWarning() << "retrieval failed";

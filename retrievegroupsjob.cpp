@@ -49,7 +49,7 @@ void RetrieveGroupsJob::doStart()
 void RetrieveGroupsJob::search()
 {
     kDebug();
-    const int ret = mLdapSearch.search( KLDAP::LdapDN(mSearchbase), KLDAP::LdapUrl::Sub, QLatin1String("(&(objectClass=groupofuniquenames)(objectClass=kolabgroupofuniquenames))"), QStringList() << "cn" << "nsuniqueid", 500);
+    const int ret = mLdapSearch.search( KLDAP::LdapDN(mSearchbase), KLDAP::LdapUrl::Sub, QLatin1String("(&(objectClass=groupofuniquenames)(objectClass=kolabgroupofuniquenames))"), QStringList() << "cn" << "nsuniqueid");
     if (!ret) {
         kWarning() << mLdapSearch.errorString();
         kWarning() << "retrieval failed";
