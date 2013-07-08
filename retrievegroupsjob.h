@@ -33,8 +33,7 @@ public:
     explicit RetrieveGroupsJob(const QString &searchbase, const Akonadi::Collection &col, KLDAP::LdapConnection &connection, QObject* parent = 0);
     virtual void doStart();
     
-signals:
-    void groupsRetrieved(const Akonadi::Collection::List &);
+    Akonadi::Collection::List retrievedCollections() const;
     
 private Q_SLOTS:
     void gotSearchResult(KLDAP::LdapSearch *search);
@@ -42,7 +41,6 @@ private Q_SLOTS:
     
 private:
     void search();
-    void done();
     KLDAP::LdapSearch mLdapSearch;
     Akonadi::Collection mParentCollection;
     Akonadi::Collection::List mRetrievedCollections;

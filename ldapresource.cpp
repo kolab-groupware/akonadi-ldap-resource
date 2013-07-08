@@ -101,15 +101,9 @@ bool LDAPResource::connectToServer()
     return true;
 }
 
-
 void LDAPResource::retrieveCollections()
 {
     kDebug();
-    if (mLdapServer.host().isEmpty()) {
-        emit error( QLatin1String("No ldap host configured") );
-        collectionsRetrieved( Collection::List() );
-        return;
-    }
     Collection root;
     root.setParentCollection(Collection::root());
     root.setRemoteId(mLdapServer.host());
@@ -128,25 +122,36 @@ void LDAPResource::retrieveCollections()
     mimeTypes << KABC::Addressee::mimeType();
     root.setContentMimeTypes(mimeTypes);
     
+    if (mLdapServer.host().isEmpty()) {
+        emit error( QLatin1String("No host configured.") );
+        //We want a dummy root to be able to access the config
+        root.setRemoteId(QUuid::createUuid().toString());
+        collectionsRetrieved( Collection::List() << root );
+        return;
+    }
     if (!connectToServer()) {
-        cancelTask(i18n( "Failed to retrieve collections."));
+        emit error( QLatin1String("Failed to retrieve collections.") );
+        collectionsRetrieved( Collection::List() << root );
         kWarning() << "Failed to connect";
         return;
     }
     RetrieveGroupsJob *retrieveJob = new RetrieveGroupsJob(mLdapServer.baseDn().toString(), root, mLdapConnection, this);
-    connect(retrieveJob, SIGNAL(groupsRetrieved(Akonadi::Collection::List)), SLOT(groupsRetrieved(Akonadi::Collection::List)));
+    retrieveJob->setProperty("root", QVariant::fromValue(root));
     connect(retrieveJob, SIGNAL(result(KJob*)), SLOT(slotGroupsRetrievalResult(KJob*)));
-}
-
-void LDAPResource::groupsRetrieved(const Collection::List &list)
-{
-    collectionsRetrieved(list);
 }
 
 void LDAPResource::slotGroupsRetrievalResult(KJob* job)
 {
+    const Collection root = job->property("root").value<Collection>();
     if (job->error()) {
-        cancelTask();
+        emit error( QLatin1String("Failed to retrieve collections.") );
+        collectionsRetrieved( Collection::List() << root );
+    } else {
+        RetrieveGroupsJob *retrieveJob = static_cast<RetrieveGroupsJob*>(job);
+        Collection::List collections;
+        collections << root;
+        collections << retrieveJob->retrievedCollections();
+        collectionsRetrieved( collections );
     }
 }
 

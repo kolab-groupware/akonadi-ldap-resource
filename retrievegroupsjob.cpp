@@ -37,7 +37,6 @@ RetrieveGroupsJob::RetrieveGroupsJob(const QString &searchbase, const Akonadi::C
            this, SLOT(gotSearchResult(KLDAP::LdapSearch*)) );
     connect( &mLdapSearch, SIGNAL(data(KLDAP::LdapSearch*,KLDAP::LdapObject)),
            this, SLOT(gotSearchData(KLDAP::LdapSearch*,KLDAP::LdapObject)) );
-    mRetrievedCollections << col;
 }
 
 void RetrieveGroupsJob::doStart()
@@ -73,7 +72,6 @@ void RetrieveGroupsJob::gotSearchResult(KLDAP::LdapSearch *search)
         }
     } else {
         kDebug() << mRetrievedCollections.size() << " groups retrieved";
-        emit groupsRetrieved(mRetrievedCollections);
     }
     emitResult();
 }
@@ -91,4 +89,9 @@ void RetrieveGroupsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Ld
     col.setParentCollection(mParentCollection);
     col.setName(obj.value("cn"));
     mRetrievedCollections << col;
+}
+
+Akonadi::Collection::List RetrieveGroupsJob::retrievedCollections() const
+{
+    return mRetrievedCollections;
 }
