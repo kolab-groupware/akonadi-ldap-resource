@@ -157,7 +157,7 @@ void RetrieveGroupMembersJob::gotSearchData(KLDAP::LdapSearch *search, const KLD
     kWarning();
     kDebug() << "Object:";
     kDebug() << obj.toString();
-    if (obj.hasAttribute("uniqueMember")) {
+    if (obj.value("nsuniqueid") == mParentCollection.remoteId()) {
         foreach (const QByteArray &val, obj.values("uniqueMember")) {
             mGroupMembers << val;
         }
