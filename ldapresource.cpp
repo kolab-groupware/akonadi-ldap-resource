@@ -158,6 +158,8 @@ void LDAPResource::retrieveItems( const Akonadi::Collection &collection )
 {
     kWarning() << collection.remoteId();
     Q_UNUSED( collection );
+    //Make an item synch also trigger a refetch of the collections
+    synchronizeCollectionTree();
 
     // TODO: this method is called when Akonadi wants to know about all the
     // items in the given collection. You can but don't have to provide all the
