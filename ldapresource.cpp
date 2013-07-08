@@ -54,6 +54,7 @@ void LDAPResource::loadConfig()
     mLdapConnection.close();
     const Settings *s = Settings::self();
     mLdapServer.setHost(s->ldaphost());
+    mLdapServer.setPort(s->ldapport());
     mLdapServer.setBaseDn(KLDAP::LdapDN(s->ldapdn()));
     mLdapServer.setBindDn(s->ldapbinddn());
     mLdapServer.setPassword(s->ldappassword());
