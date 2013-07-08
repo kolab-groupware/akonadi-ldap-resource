@@ -1,4 +1,21 @@
+/*
+ * Copyright (C) 2013  Christian Mollekopf <mollekopf@kolabsys.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "ldapresource.h"
+
 #include "retrieveitemsjob.h"
 #include "retrieveitemjob.h"
 #include "retrievegroupsjob.h"
@@ -87,11 +104,7 @@ bool LDAPResource::connectToServer()
 
 void LDAPResource::retrieveCollections()
 {
-    // TODO: this method is called when Akonadi wants to have all the
-    // collections your resource provides.
-    // Be sure to set the remote ID and the content MIME types
-    
-//     Maildir dir( mSettings->path(), mSettings->topLevelIsContainer() );
+    kDebug();
     if (mLdapServer.host().isEmpty()) {
         emit error( QLatin1String("No ldap host configured") );
         collectionsRetrieved( Collection::List() );
@@ -174,7 +187,6 @@ void LDAPResource::slotItemsRetrievalResult (KJob* job)
 
 bool LDAPResource::retrieveItem( const Akonadi::Item &item, const QSet<QByteArray> &parts )
 {
-    Q_UNUSED( item );
     Q_UNUSED( parts );
     kDebug() << parts << item.remoteId();
     if (!connectToServer()) {
@@ -209,40 +221,38 @@ void LDAPResource::aboutToQuit()
 
 void LDAPResource::configure( WId windowId )
 {
-  Q_UNUSED( windowId );
-  
-  KConfigDialog* dialog = KConfigDialog::exists( "settings" );
+    KConfigDialog* dialog = KConfigDialog::exists( "settings" );
 
-  if ( !dialog ) {
-    // KConfigDialog didn't find an instance of this dialog, so lets
-    // create it :
-    dialog = new KConfigDialog( 0, "settings", Settings::self() );
+    if ( !dialog ) {
+        // KConfigDialog didn't find an instance of this dialog, so lets
+        // create it :
+        dialog = new KConfigDialog( 0, "settings", Settings::self() );
 
-    KLDAP::LdapConfigWidget::WinFlags featureFlags
-      = KLDAP::LdapConfigWidget::W_BINDDN
-      | KLDAP::LdapConfigWidget::W_PASS
-      | KLDAP::LdapConfigWidget::W_HOST
-      | KLDAP::LdapConfigWidget::W_PORT
-      | KLDAP::LdapConfigWidget::W_DN;
-    KLDAP::LdapConfigWidget *configWidget
-      = new KLDAP::LdapConfigWidget( featureFlags, dialog );
+        KLDAP::LdapConfigWidget::WinFlags featureFlags
+        = KLDAP::LdapConfigWidget::W_BINDDN
+        | KLDAP::LdapConfigWidget::W_PASS
+        | KLDAP::LdapConfigWidget::W_HOST
+        | KLDAP::LdapConfigWidget::W_PORT
+        | KLDAP::LdapConfigWidget::W_DN;
+        KLDAP::LdapConfigWidget *configWidget
+        = new KLDAP::LdapConfigWidget( featureFlags, dialog );
 
-    dialog->addPage( configWidget, i18n("LDAP Settings"), "settings" );
+        dialog->addPage( configWidget, i18n("LDAP Settings"), "settings" );
 
-    connect( dialog, SIGNAL(okClicked()),
-             this, SIGNAL(configurationDialogAccepted()) );
-    connect( dialog, SIGNAL(cancelClicked()),
-             this, SIGNAL(configurationDialogRejected()) );
-  }
+        connect( dialog, SIGNAL(okClicked()),
+                this, SIGNAL(configurationDialogAccepted()) );
+        connect( dialog, SIGNAL(cancelClicked()),
+                this, SIGNAL(configurationDialogRejected()) );
+    }
 
-  if ( windowId ) {
-    KWindowSystem::setMainWindow( dialog, windowId );
-  }
+    if ( windowId ) {
+        KWindowSystem::setMainWindow( dialog, windowId );
+    }
 
-  if (dialog->exec() == QDialog::Accepted) {
-      kDebug() << "dialog accepted";
-      loadConfig();
-  }
+    if (dialog->exec() == QDialog::Accepted) {
+        kDebug() << "dialog accepted";
+        loadConfig();
+    }
 }
 
 AKONADI_RESOURCE_MAIN( LDAPResource )
