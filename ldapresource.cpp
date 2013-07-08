@@ -125,7 +125,6 @@ void LDAPResource::retrieveCollections()
     if (mLdapServer.host().isEmpty()) {
         emit error( QLatin1String("No host configured.") );
         //We want a dummy root to be able to access the config
-        root.setRemoteId(QUuid::createUuid().toString());
         collectionsRetrieved( Collection::List() << root );
         return;
     }
