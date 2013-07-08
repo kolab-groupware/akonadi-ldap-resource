@@ -38,6 +38,9 @@ LDAPResource::LDAPResource( const QString &id )
     changeRecorder()->itemFetchScope().setAncestorRetrieval( ItemFetchScope::None );
     changeRecorder()->setChangeRecordingEnabled(false);
     
+    //Due to groups
+    setHierarchicalRemoteIdentifiersEnabled(true);
+    
     //Ensure the root collection is immmediately created
     synchronizeCollectionTree();
 }
