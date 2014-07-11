@@ -5,6 +5,12 @@
       xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
       http://www.kde.org/standards/kcfg/1.0/kcfg.xsd" >
   <kcfgfile/>
+  <group name="Addressbook">
+  <entry name="name" type="String">
+    <label>Addressbook Name</label>
+    <default>LDAP Addressbook</default>
+  </entry>
+  </group>
   <group name="Server">
     <entry name="ldaphost" type="String">
       <label>LDAP hostname or IP address</label>
@@ -21,12 +27,26 @@
       <default>uid=user,ou=People,dc=example,dc=org</default>
     </entry>
     <entry name="ldappassword" type="String">
-      <label>LDAP user name</label>
+      <label>LDAP user password</label>
       <default></default>
     </entry>
     <entry name="ldapdn" type="String">
       <label>LDAP DN</label>
       <default>dc=example,dc=org</default>
+    </entry>
+  </group>
+  <group name="Synchronization">
+    <entry name="offlinemode" type="Int">
+      <label></label>
+      <default>false</default>
+    </entry>
+    <entry name="incrementalupdateinterval" type="Int">
+      <label>Time interval (minutes) for incremental updates</label>
+      <default>60</default>
+    </entry>
+    <entry name="fullupdateinterval" type="Int">
+      <label>Time interval (hours) for full updates</label>
+      <default>12</default>
     </entry>
   </group>
 </kcfg>

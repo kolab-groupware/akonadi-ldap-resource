@@ -46,13 +46,16 @@ private Q_SLOTS:
     void slotGroupsRetrievalResult (KJob* job);
     void slotItemsRetrievalResult (KJob* job);
     void slotItemRetrievalResult (KJob* job);
-    
+    void scheduleIncrementalUpdateTask();
+    void incrementalUpdateTask(const QVariant &params);
+    void incrementalUpdateResult(KJob *job);
 
 private:
     void loadConfig();
     bool connectToServer();
     KLDAP::LdapServer mLdapServer;
     KLDAP::LdapConnection mLdapConnection;
+    QTimer *mIncrementalUpdateTimer;
 };
 
 #endif

@@ -16,6 +16,7 @@
  */
 #include "ldapresource.h"
 
+#include "incrementalupdatejob.h"
 #include "retrieveitemsjob.h"
 #include "retrieveitemjob.h"
 #include "retrievegroupsjob.h"
@@ -23,6 +24,7 @@
 
 #include "settings.h"
 #include "settingsadaptor.h"
+#include "settingswidget.h"
 
 #include <QtDBus/QDBusConnection>
 
@@ -32,7 +34,6 @@
 #include <akonadi/kmime/messageparts.h>
 
 #include <KABC/Addressee>
-#include <KLDAP/LdapConfigWidget>
 #include <KLDAP/LdapServer>
 #include <kconfigdialog.h>
 #include <klocalizedstring.h>
@@ -42,7 +43,8 @@ using namespace Akonadi;
 
 
 LDAPResource::LDAPResource( const QString &id )
-    : ResourceBase( id )
+    : ResourceBase( id ),
+      mIncrementalUpdateTimer(new QTimer(this))
 {
     new SettingsAdaptor( Settings::self() );
     QDBusConnection::sessionBus().registerObject( QLatin1String( "/Settings" ),
@@ -60,6 +62,10 @@ LDAPResource::LDAPResource( const QString &id )
     
     //Ensure the root collection is immmediately created
     synchronizeCollectionTree();
+
+    mIncrementalUpdateTimer->setSingleShot(true);
+    connect(mIncrementalUpdateTimer, SIGNAL(timeout()), this, SLOT(scheduleIncrementalUpdateTask()));
+    mIncrementalUpdateTimer->start();
 }
 
 LDAPResource::~LDAPResource()
@@ -80,6 +86,9 @@ void LDAPResource::loadConfig()
     kDebug() << s->ldaphost();
     kDebug() << s->ldapdn();
     kDebug() << s->ldapbinddn();
+
+    mIncrementalUpdateTimer->setInterval(s->incrementalupdateinterval() * 60 * 1000);
+    setName(s->name());
 }
 
 bool LDAPResource::connectToServer()
@@ -114,7 +123,11 @@ void LDAPResource::retrieveCollections()
     policy.setInheritFromParent(false);
     policy.setSyncOnDemand(true);
     policy.setCacheTimeout(-1);
-    policy.setIntervalCheckTime(-1);
+
+    // cache policy interval is in minutes, config in hours
+    const int fullUpdateInterval = Settings::self()->fullupdateinterval() * 60;
+    policy.setIntervalCheckTime(fullUpdateInterval == 0 ? -1 : fullUpdateInterval);
+
     root.setCachePolicy(policy);
 
     QStringList mimeTypes;
@@ -188,6 +201,7 @@ void LDAPResource::slotItemsRetrievalResult (KJob* job)
         cancelTask(job->errorString());
     } else {
         itemsRetrievalDone();
+        mIncrementalUpdateTimer->start();
     }
 }
 
@@ -218,6 +232,29 @@ void LDAPResource::slotItemRetrievalResult (KJob* job)
     itemRetrieved(static_cast<RetrieveItemJob*>(job)->getItem());
 }
 
+void LDAPResource::scheduleIncrementalUpdateTask()
+{
+    scheduleCustomTask(this, "incrementalUpdateTask", QVariant());
+}
+
+void LDAPResource::incrementalUpdateTask(const QVariant &params)
+{
+    Q_UNUSED(params);
+
+    IncrementalUpdateJob *job = new IncrementalUpdateJob(identifier(), mLdapServer.baseDn().toString(), mLdapConnection, this);
+    connect(job, SIGNAL(result(KJob*)), this, SLOT(incrementalUpdateResult(KJob*)));
+
+    // TODO progress reporting
+}
+
+void LDAPResource::incrementalUpdateResult(KJob *job)
+{
+    Q_UNUSED(job);
+
+    taskDone();
+    mIncrementalUpdateTimer->start();
+}
+
 void LDAPResource::aboutToQuit()
 {
     // TODO: any cleanup you need to do while there is still an active
@@ -233,17 +270,11 @@ void LDAPResource::configure( WId windowId )
         // KConfigDialog didn't find an instance of this dialog, so lets
         // create it :
         dialog = new KConfigDialog( 0, "settings", Settings::self() );
+        dialog->setFaceType( KPageDialog::Plain );
 
-        KLDAP::LdapConfigWidget::WinFlags featureFlags
-        = KLDAP::LdapConfigWidget::W_BINDDN
-        | KLDAP::LdapConfigWidget::W_PASS
-        | KLDAP::LdapConfigWidget::W_HOST
-        | KLDAP::LdapConfigWidget::W_PORT
-        | KLDAP::LdapConfigWidget::W_DN;
-        KLDAP::LdapConfigWidget *configWidget
-        = new KLDAP::LdapConfigWidget( featureFlags, dialog );
+        SettingsWidget *configWidget = new SettingsWidget( dialog );
 
-        dialog->addPage( configWidget, i18n("LDAP Settings"), "settings" );
+        dialog->addPage( configWidget, i18n("Settings"), "settings" );
 
         connect( dialog, SIGNAL(okClicked()),
                 this, SIGNAL(configurationDialogAccepted()) );

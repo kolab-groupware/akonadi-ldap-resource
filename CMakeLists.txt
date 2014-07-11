@@ -46,7 +46,10 @@ set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${KDE4_ENABLE_EXCEPTIONS}" )
 ########### next target ###############
 
 set( ldapresource_SRCS retrieveitemsjob.cpp retrieveitemjob.cpp ldapmapper.cpp retrievegroupsjob.cpp retrievegroupmembersjob.cpp
-     retrieveupdatesjob.cpp updateitemjob.cpp incrementalupdatejob.cpp incrementalupdatedata.cpp updategroupjob.cpp )
+     retrieveupdatesjob.cpp updateitemjob.cpp incrementalupdatejob.cpp incrementalupdatedata.cpp updategroupjob.cpp
+     settingswidget.cpp )
+
+kde4_add_ui_files(ldapresource_SRCS settingswidget.ui)
 
 install( FILES ldapresource.desktop DESTINATION "${CMAKE_INSTALL_PREFIX}/share/akonadi/agents" )
 
