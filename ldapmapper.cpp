@@ -60,6 +60,6 @@ QString LDAPMapper::getStableIdentifier(const KLDAP::LdapObject& obj)
 
 QString LDAPMapper::getTimestamp(const KLDAP::LdapObject& obj)
 {
-    return obj.value("nsuniqueid");
+    return obj.value("modifyTimestamp");
 }
 
