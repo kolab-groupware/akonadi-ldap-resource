@@ -18,6 +18,7 @@
 #include "retrieveitemsjob.h"
 #include "ldapmapper.h"
 #include <KABC/Addressee>
+#include <Akonadi/CollectionModifyJob>
 #include <Akonadi/ItemFetchJob>
 #include <Akonadi/ItemFetchScope>
 #include <Akonadi/ItemCreateJob>
@@ -115,6 +116,15 @@ void RetrieveItemsJob::gotSearchResult(KLDAP::LdapSearch *search)
             Akonadi::ItemDeleteJob *job = new Akonadi::ItemDeleteJob(toRemove, transaction());
             transaction()->setIgnoreJobFailure(job);
         }
+
+        if (!mMostRecentTimestamp.isEmpty()) {
+            Akonadi::Collection col = mParentCollection;
+            col.setRemoteRevision(mMostRecentTimestamp);
+
+            Akonadi::CollectionModifyJob *job = new Akonadi::CollectionModifyJob(col, transaction());
+            transaction()->setIgnoreJobFailure(job);
+        }
+
     }
     if (!mTransaction) { // no jobs created here -> done
         done();
@@ -130,12 +140,15 @@ void RetrieveItemsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Lda
     kDebug() << "Object:";
     kDebug() << obj.toString();
     kDebug() << "got person: " << obj.dn().toString() << obj.value("nsuniqueid") << obj.value("modifyTimestamp");
+    updateMostRecentTimestamp(LDAPMapper::getTimestamp(obj));
+
     Akonadi::Item item;
     item.setRemoteId(LDAPMapper::getStableIdentifier(obj));
     item.setPayload(LDAPMapper::getAddressee(obj));
     item.setMimeType(KABC::Addressee::mimeType());
     item.setParentCollection(mParentCollection);
     item.setRemoteRevision(LDAPMapper::getTimestamp(obj));
+
     
     const QHash<QString, QString>::iterator it = mLocalItems.find(item.remoteId());
     if (it != mLocalItems.end()) {
@@ -174,6 +187,15 @@ void RetrieveItemsJob::done()
 {
     kDebug() << "Done. Took " << mTime.elapsed()/1000.0 << " s";
     emitResult();
+}
+
+void RetrieveItemsJob::updateMostRecentTimestamp(const QString &timestamp)
+{
+    if (!timestamp.isEmpty()) {
+        if (mMostRecentTimestamp.isEmpty() || mMostRecentTimestamp < timestamp) {
+            mMostRecentTimestamp = timestamp;
+        }
+    }
 }
 
 

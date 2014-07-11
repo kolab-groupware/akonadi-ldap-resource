@@ -48,12 +48,15 @@ private:
     Akonadi::TransactionSequence *transaction();
     void search();
     void done();
+    void updateMostRecentTimestamp(const QString &timestamp);
+
     KLDAP::LdapSearch mLdapSearch;
     Akonadi::Collection mParentCollection;
     QHash<QString, QString> mLocalItems;
     Akonadi::TransactionSequence *mTransaction;
     QString mSearchbase;
     QTime mTime;
+    QString mMostRecentTimestamp;
 };
 
 #endif // RETRIEVEITEMSJOB_H
