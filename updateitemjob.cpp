@@ -50,7 +50,7 @@ void UpdateItemJob::start()
     // TODO have IncrementalUpdateJob provide DN for item instead of searchbase
     const int ret = mLdapSearch.search(KLDAP::LdapDN(mSearchbase), KLDAP::LdapUrl::Sub,
                                        QLatin1String("nsuniqueid=") + mLdapItemId,
-                                       LDAPMapper::requestedAttributes());
+                                       LDAPMapper::requestedFullPayloadAttributes());
     if (!ret) {
         kWarning() << mLdapSearch.errorString();
         kWarning() << "retrieval failed";

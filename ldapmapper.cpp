@@ -29,13 +29,22 @@ QString LDAPMapper::getAttribute(LDAPMapper::Attribute attr)
     return QString();
 }
 
-QStringList LDAPMapper::requestedAttributes()
+QStringList LDAPMapper::requestedFullPayloadAttributes()
+{
+    QStringList requestedAttributes = requestedLookupPayloadAttributes();
+
+    // TODO: check for more available attributes
+    requestedAttributes << "o" << "title";
+
+    return requestedAttributes;
+}
+
+QStringList LDAPMapper::requestedLookupPayloadAttributes()
 {
     QStringList requestedAttributes;
     requestedAttributes << "dn" << "uid" << "cn" << "givenName" << "sn" << "mail" << "alias" << "displayName" << "nsuniqueid" << "modifyTimestamp";
     return requestedAttributes;
 }
-
 
 KABC::Addressee LDAPMapper::getAddressee(const KLDAP::LdapObject& obj)
 {
@@ -50,6 +59,15 @@ KABC::Addressee LDAPMapper::getAddressee(const KLDAP::LdapObject& obj)
         email << e;
     }
     addressee.setEmails(email);
+
+    // TODO: support for FullPayload attributes
+    if (obj.hasAttribute("o")) {
+        addressee.setOrganization(obj.value("o"));
+    }
+    if (obj.hasAttribute("title")) {
+        addressee.setTitle(obj.value("title"));
+    }
+
     return addressee;
 }
 

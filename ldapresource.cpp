@@ -31,7 +31,7 @@
 #include <Akonadi/CachePolicy>
 #include <Akonadi/ItemFetchJob>
 #include <Akonadi/ItemFetchScope>
-#include <akonadi/kmime/messageparts.h>
+#include <akonadi/kabc/contactparts.h>
 
 #include <KABC/Addressee>
 #include <KLDAP/LdapServer>
@@ -122,7 +122,23 @@ void LDAPResource::retrieveCollections()
     CachePolicy policy;
     policy.setInheritFromParent(false);
     policy.setSyncOnDemand(true);
+
+    // TODO: not indefinite if offlinemode == false?
     policy.setCacheTimeout(-1);
+
+    // TODO: revisit when there is actually big enough difference between
+    // the different parts in terms of what the LDAP queries provide
+#if 0
+    QStringList localParts = QStringList() << Akonadi::ContactPart::Lookup;
+
+    if (Settings::self()->offlinemode()) {
+        localParts << Akonadi::Item::FullPayload;
+    }
+#else
+    QStringList localParts = QStringList() << Akonadi::Item::FullPayload;
+#endif
+
+    policy.setLocalParts(localParts);
 
     // cache policy interval is in minutes, config in hours
     const int fullUpdateInterval = Settings::self()->fullupdateinterval() * 60;
@@ -184,12 +200,21 @@ void LDAPResource::retrieveItems( const Akonadi::Collection &collection )
         kWarning() << "Failed to connect";
         return;
     }
+
+    const bool fullPayload = collection.cachePolicy().localParts().contains(Akonadi::Item::FullPayload);
+
     if (collection.parentCollection() == Collection::root()) {
         RetrieveItemsJob *job = new RetrieveItemsJob(mLdapServer.baseDn().toString(), collection, mLdapConnection, this);
+        if (fullPayload) {
+            job->setFetchScope(RetrieveItemsJob::FullPayload);
+        }
         connect(job, SIGNAL(result(KJob*)), SLOT(slotItemsRetrievalResult(KJob*)));
     } else {
         //Groups
         RetrieveGroupMembersJob *job = new RetrieveGroupMembersJob(mLdapServer.baseDn().toString(), collection, mLdapConnection, this);
+        if (fullPayload) {
+            job->setFetchScope(RetrieveGroupMembersJob::FullPayload);
+        }
         connect(job, SIGNAL(result(KJob*)), SLOT(slotItemsRetrievalResult(KJob*)));
     }
 }

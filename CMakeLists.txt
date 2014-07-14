@@ -61,7 +61,7 @@ qt4_add_dbus_adaptor(ldapresource_SRCS
 
 kde4_add_executable(akonadi_ldap_resource RUN_UNINSTALLED ldapresource.cpp ${ldapresource_SRCS})
 
-target_link_libraries(akonadi_ldap_resource ${KDE4_AKONADI_LIBS} ${QT_QTCORE_LIBRARY} ${QT_QTDBUS_LIBRARY} ${KDE4_KDECORE_LIBS} ${KDE4_KABC_LIBS} ${KDEPIMLIBS_AKONADI_KMIME_LIBS} ${KDEPIMLIBS_KLDAP_LIBS})
+target_link_libraries(akonadi_ldap_resource ${KDE4_AKONADI_LIBS} ${QT_QTCORE_LIBRARY} ${QT_QTDBUS_LIBRARY} ${KDE4_KDECORE_LIBS} ${KDE4_KABC_LIBS} ${KDEPIMLIBS_AKONADI_KABC_LIBS} ${KDEPIMLIBS_KLDAP_LIBS})
 
 install(TARGETS akonadi_ldap_resource ${INSTALL_TARGETS_DEFAULT_ARGS})
 

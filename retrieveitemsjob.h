@@ -31,9 +31,16 @@ class RetrieveItemsJob :  public Akonadi::Job
 {
     Q_OBJECT
 public:
+    enum FetchScope {
+        LookupPayload,
+        FullPayload
+    };
+
     explicit RetrieveItemsJob(const QString &searchbase, const Akonadi::Collection &col, KLDAP::LdapConnection &connection, QObject* parent = 0);
     virtual void doStart();
     
+    void setFetchScope(FetchScope fetchScope);
+
 signals:
     void contactsRetrieved(const Akonadi::Item::List &);
     
@@ -50,6 +57,7 @@ private:
     void done();
     void updateMostRecentTimestamp(const QString &timestamp);
 
+    FetchScope mFetchScope;
     KLDAP::LdapSearch mLdapSearch;
     Akonadi::Collection mParentCollection;
     QHash<QString, QString> mLocalItems;

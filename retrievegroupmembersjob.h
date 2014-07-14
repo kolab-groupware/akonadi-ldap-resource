@@ -31,9 +31,16 @@ class RetrieveGroupMembersJob:  public Akonadi::Job
 {
     Q_OBJECT
 public:
+    enum FetchScope {
+        LookupPayload,
+        FullPayload
+    };
+
     explicit RetrieveGroupMembersJob(const QString &searchbase, const Akonadi::Collection &col, KLDAP::LdapConnection &connection, QObject* parent = 0);
     virtual void doStart();
     
+    void setFetchScope(FetchScope fetchScope);
+
 signals:
     void contactsRetrieved(const Akonadi::Item::List &);
     
@@ -50,6 +57,8 @@ private:
     void searchForMember(const QString &memberDn);
     void done();
     bool getNextMember();
+
+    FetchScope mFetchScope;
     KLDAP::LdapSearch mLdapSearch;
     Akonadi::Collection mParentCollection;
     QHash<QString, QString> mLocalItems;

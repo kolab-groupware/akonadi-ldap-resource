@@ -45,7 +45,7 @@ void RetrieveItemJob::doStart()
 void RetrieveItemJob::search()
 {
     kDebug();
-    const int ret = mLdapSearch.search( KLDAP::LdapDN(mSearchbase), KLDAP::LdapUrl::Sub, QString("%1=%2").arg(LDAPMapper::getAttribute(LDAPMapper::UniqueIdentifier)).arg(mItemToFetch.remoteId()), LDAPMapper::requestedAttributes());
+    const int ret = mLdapSearch.search( KLDAP::LdapDN(mSearchbase), KLDAP::LdapUrl::Sub, QString("%1=%2").arg(LDAPMapper::getAttribute(LDAPMapper::UniqueIdentifier)).arg(mItemToFetch.remoteId()), LDAPMapper::requestedFullPayloadAttributes());
     if (!ret) {
         kWarning() << mLdapSearch.errorString();
         kWarning() << "retrieval failed";

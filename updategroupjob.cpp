@@ -227,7 +227,7 @@ void UpdateGroupJob::searchForAllMembers()
 void UpdateGroupJob::searchForMember(const QString &memberDn)
 {
     const int ret = mLdapSearch.search(KLDAP::LdapDN(memberDn), KLDAP::LdapUrl::Base, QString(),
-                                       LDAPMapper::requestedAttributes());
+                                       LDAPMapper::requestedFullPayloadAttributes());
     if (!ret) {
         kWarning() << mLdapSearch.errorString();
         kWarning() << "retrieval failed";

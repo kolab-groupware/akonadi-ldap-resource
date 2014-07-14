@@ -17,6 +17,7 @@
 
 #include "retrieveitemsjob.h"
 #include "ldapmapper.h"
+
 #include <KABC/Addressee>
 #include <Akonadi/CollectionModifyJob>
 #include <Akonadi/ItemFetchJob>
@@ -29,6 +30,7 @@
 
 RetrieveItemsJob::RetrieveItemsJob(const QString &searchbase, const Akonadi::Collection& col, KLDAP::LdapConnection& connection, QObject* parent)
 :   Job(parent),
+    mFetchScope(LookupPayload),
     mLdapSearch(connection),
     mParentCollection(col),
     mTransaction(0),
@@ -51,6 +53,11 @@ void RetrieveItemsJob::doStart()
     connect(job, SIGNAL(itemsReceived(Akonadi::Item::List)), this, SLOT(localItemsReceived(Akonadi::Item::List)));
     connect(job, SIGNAL(result(KJob*)), this, SLOT(localFetchDone(KJob*)));
     mTime.start();
+}
+
+void RetrieveItemsJob::setFetchScope(RetrieveItemsJob::FetchScope fetchScope)
+{
+    mFetchScope = fetchScope;
 }
 
 void RetrieveItemsJob::localItemsReceived(const Akonadi::Item::List &items)
@@ -77,7 +84,9 @@ void RetrieveItemsJob::localFetchDone(KJob *job)
 void RetrieveItemsJob::search()
 {
     kDebug();
-    const int ret = mLdapSearch.search( KLDAP::LdapDN(mSearchbase), KLDAP::LdapUrl::Sub, QLatin1String("objectClass=inetorgperson"), LDAPMapper::requestedAttributes());
+    const QStringList attributes = mFetchScope == FullPayload ? LDAPMapper::requestedFullPayloadAttributes()
+                                                              : LDAPMapper::requestedLookupPayloadAttributes();
+    const int ret = mLdapSearch.search( KLDAP::LdapDN(mSearchbase), KLDAP::LdapUrl::Sub, QLatin1String("objectClass=inetorgperson"), attributes);
     if (!ret) {
         kWarning() << mLdapSearch.errorString();
         kWarning() << "retrieval failed";
