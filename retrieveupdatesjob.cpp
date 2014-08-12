@@ -119,7 +119,7 @@ void RetrieveUpdatesJob::retrieveItemUpdates()
 {
     Q_ASSERT(mPhase == RetrieveItemUpdates);
 
-    const QString query = QLatin1String("(&(objectClass=inetorgperson)") + mTimeQuery + QLatin1String(")");
+    const QString query = QLatin1String("(objectClass=inetorgperson)"); //+ mTimeQuery + QLatin1String(")");
 
     const int ret = mLdapSearch.search(KLDAP::LdapDN(mSearchbase), KLDAP::LdapUrl::Sub, query,
                                        QStringList() << LDAPMapper::getAttribute(LDAPMapper::UniqueIdentifier)
