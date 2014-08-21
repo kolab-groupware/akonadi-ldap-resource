@@ -92,7 +92,9 @@ void RetrieveGroupMembersJob::localFetchDone(KJob *job)
 void RetrieveGroupMembersJob::searchForGroup()
 {
     kDebug();
-    const int ret = mLdapSearch.search( KLDAP::LdapDN(mSearchbase), KLDAP::LdapUrl::Sub, QString("%1=%2").arg(LDAPMapper::getAttribute(LDAPMapper::UniqueIdentifier)).arg(mParentCollection.remoteId()), QStringList() << "nsuniqueid" << "uniqueMember" << "cn");
+    const int ret = mLdapSearch.search( KLDAP::LdapDN(mSearchbase), KLDAP::LdapUrl::Sub,
+                                        QString("%1=%2").arg(LDAPMapper::getAttribute(LDAPMapper::UniqueIdentifier)).arg(mParentCollection.remoteId()),
+                                        QStringList() << "nsuniqueid" << "uniqueMember" << "cn");
     if (!ret) {
         kWarning() << mLdapSearch.errorString();
         kWarning() << "retrieval failed";
@@ -247,17 +249,17 @@ void RetrieveGroupMembersJob::createdItem(KJob* job) {
 
 Akonadi::TransactionSequence* RetrieveGroupMembersJob::transaction()
 {
-    if ( !mTransaction ) {
-        mTransaction= new Akonadi::TransactionSequence( this );
-        mTransaction->setAutomaticCommittingEnabled( false );
-        connect(mTransaction, SIGNAL(result(KJob*)), SLOT(transactionDone(KJob*)) );
+    if (!mTransaction) {
+        mTransaction= new Akonadi::TransactionSequence(this);
+        mTransaction->setAutomaticCommittingEnabled(false);
+        connect(mTransaction, SIGNAL(result(KJob*)), SLOT(transactionDone(KJob*)));
     }
     return mTransaction;
 }
 
 void RetrieveGroupMembersJob::transactionDone (KJob* job)
 {
-    if ( job->error() ) {
+    if (job->error()) {
         return; // handled by base class
     }
 
@@ -284,7 +286,7 @@ void RetrieveGroupMembersJob::saveContactGroup()
 
 void RetrieveGroupMembersJob::savedContactGroup(KJob *job)
 {
-    if ( job->error() ) {
+    if (job->error()) {
         return; // handled by base class
     }
     done();

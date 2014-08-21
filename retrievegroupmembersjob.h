@@ -39,12 +39,12 @@ public:
 
     explicit RetrieveGroupMembersJob(const QString &searchbase, const Akonadi::Collection &col, KLDAP::LdapConnection &connection, QObject* parent = 0);
     virtual void doStart();
-    
+
     void setFetchScope(FetchScope fetchScope);
 
 signals:
     void contactsRetrieved(const Akonadi::Item::List &);
-    
+
 private Q_SLOTS:
     void gotSearchResult(KLDAP::LdapSearch *search);
     void gotSearchData(KLDAP::LdapSearch *search, const KLDAP::LdapObject &obj);
@@ -53,7 +53,7 @@ private Q_SLOTS:
     void transactionDone(KJob* job);
     void createdItem(KJob* job);
     void savedContactGroup(KJob* job);
-    
+
 private:
     Akonadi::TransactionSequence *transaction();
     void searchForGroup();

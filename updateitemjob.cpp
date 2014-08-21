@@ -94,7 +94,6 @@ void UpdateItemJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::LdapOb
     mItem.setPayload(LDAPMapper::getAddressee(obj));
     mItem.setMimeType(KABC::Addressee::mimeType());
     mItem.setRemoteRevision(LDAPMapper::getTimestamp(obj));
-    mItem.setPayload(LDAPMapper::getAddressee(obj));
 }
 
 void UpdateItemJob::localFetchDone(KJob *job)

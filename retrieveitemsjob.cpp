@@ -176,7 +176,7 @@ void RetrieveItemsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Lda
 
 Akonadi::TransactionSequence* RetrieveItemsJob::transaction()
 {
-    if ( !mTransaction ) {
+    if (!mTransaction) {
         mTransaction= new Akonadi::TransactionSequence( this );
         mTransaction->setAutomaticCommittingEnabled( false );
         connect(mTransaction, SIGNAL(result(KJob*)), SLOT(transactionDone(KJob*)) );
@@ -186,7 +186,7 @@ Akonadi::TransactionSequence* RetrieveItemsJob::transaction()
 
 void RetrieveItemsJob::transactionDone (KJob* job)
 {
-    if ( job->error() ) {
+    if (job->error()) {
         return; // handled by base class
     }
     done();

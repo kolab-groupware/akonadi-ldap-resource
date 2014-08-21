@@ -192,7 +192,7 @@ void UpdateGroupJob::transactionDone(KJob *job)
 
 Akonadi::TransactionSequence *UpdateGroupJob::transaction()
 {
-    if ( !mTransaction ) {
+    if (!mTransaction) {
         mTransaction= new Akonadi::TransactionSequence( this );
         mTransaction->setAutomaticCommittingEnabled( false );
         connect(mTransaction, SIGNAL(result(KJob*)), SLOT(transactionDone(KJob*)) );
