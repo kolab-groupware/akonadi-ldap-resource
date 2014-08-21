@@ -50,10 +50,10 @@ KABC::Addressee LDAPMapper::getAddressee(const KLDAP::LdapObject& obj)
 {
     KABC::Addressee addressee;
     addressee.setUid(obj.value("nsuniqueid"));
-    addressee.setName(obj.value("cn"));
-    addressee.setGivenName(obj.value("givenName"));
-    addressee.setFamilyName(obj.value("sn"));
-    addressee.setFormattedName(obj.value("displayName"));
+    addressee.setName(QString::fromUtf8(obj.value("cn")));
+    addressee.setGivenName(QString::fromUtf8(obj.value("givenName")));
+    addressee.setFamilyName(QString::fromUtf8(obj.value("sn")));
+    addressee.setFormattedName(QString::fromUtf8(obj.value("displayName")));
     QStringList email(obj.value("mail"));
     foreach(const QByteArray &e, obj.values("alias")) {
         email << e;
