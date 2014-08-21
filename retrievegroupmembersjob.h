@@ -22,6 +22,7 @@
 #include <kjob.h>
 #include <akonadi/job.h>
 #include <KLDAP/LdapSearch>
+#include <KABC/ContactGroup>
 #include <akonadi/collection.h>
 #include <akonadi/item.h>
 #include <akonadi/transactionsequence.h>
@@ -50,6 +51,8 @@ private Q_SLOTS:
     void localFetchDone(KJob*);
     void localItemsReceived(const Akonadi::Item::List &);
     void transactionDone(KJob* job);
+    void createdItem(KJob* job);
+    void savedContactGroup(KJob* job);
     
 private:
     Akonadi::TransactionSequence *transaction();
@@ -57,15 +60,20 @@ private:
     void searchForMember(const QString &memberDn);
     void done();
     bool getNextMember();
+    void saveContactGroup();
 
     FetchScope mFetchScope;
     KLDAP::LdapSearch mLdapSearch;
     Akonadi::Collection mParentCollection;
     QHash<QString, QString> mLocalItems;
+    QHash<QString, Akonadi::Entity::Id> mRemoteLocalIds;
     Akonadi::TransactionSequence *mTransaction;
     QString mSearchbase;
     QTime mTime;
     QStringList mGroupMembers;
+    Akonadi::Item mGroupItem;
+    KABC::ContactGroup mGroup;
+    bool mSaveContactGroup;
 };
 
 #endif // RETRIEVEITEMSJOB_H
