@@ -23,6 +23,7 @@
 #include "updategroupjob.h"
 
 #include <KABC/Addressee>
+#include <KABC/ContactGroup>
 
 #include <akonadi/collectioncreatejob.h>
 #include <akonadi/collectionfetchjob.h>
@@ -183,7 +184,7 @@ void IncrementalUpdateJob::processNextGroup()
             Akonadi::Collection groupCollection;
             groupCollection.setName(groupName);
             groupCollection.setRemoteId(groupId);
-            groupCollection.setContentMimeTypes(QStringList() << KABC::Addressee::mimeType() << Akonadi::Collection::mimeType());
+            groupCollection.setContentMimeTypes(QStringList() << KABC::Addressee::mimeType() << Akonadi::Collection::mimeType() << KABC::ContactGroup::mimeType());
             groupCollection.setParentCollection(collection);
             groupCollection.setRemoteRevision(groupUpdate.timestamp);
 

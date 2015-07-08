@@ -149,6 +149,7 @@ void LDAPResource::retrieveCollections()
     QStringList mimeTypes;
     mimeTypes << Collection::mimeType();
     mimeTypes << KABC::Addressee::mimeType();
+    mimeTypes << KABC::ContactGroup::mimeType();
     root.setContentMimeTypes(mimeTypes);
     
     if (mLdapServer.host().isEmpty()) {
