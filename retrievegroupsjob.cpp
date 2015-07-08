@@ -18,6 +18,7 @@
 #include "retrievegroupsjob.h"
 #include "ldapmapper.h"
 #include <KABC/Addressee>
+#include <KABC/ContactGroup>
 #include <Akonadi/ItemFetchJob>
 #include <Akonadi/ItemFetchScope>
 #include <Akonadi/ItemCreateJob>
@@ -86,7 +87,7 @@ void RetrieveGroupsJob::gotSearchData(KLDAP::LdapSearch *search, const KLDAP::Ld
     kDebug() << "got group: " << obj.dn().toString() << obj.value("nsuniqueid");
     Akonadi::Collection col;
     col.setRemoteId(LDAPMapper::getStableIdentifier(obj));
-    col.setContentMimeTypes(QStringList() << KABC::Addressee::mimeType() << Akonadi::Collection::mimeType());
+    col.setContentMimeTypes(QStringList() << KABC::Addressee::mimeType() << Akonadi::Collection::mimeType() << KABC::ContactGroup::mimeType());
     col.setParentCollection(mParentCollection);
     col.setName(obj.value("cn"));
     mRetrievedCollections << col;
